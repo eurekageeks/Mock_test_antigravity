@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'https://examprism.a1training.in/api',
+  baseURL: import.meta.env.VITE_API_URL || 'https://examprism.a1training.in',
   headers: {
     'Content-Type': 'application/json',
   },
