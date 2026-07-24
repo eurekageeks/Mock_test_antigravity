@@ -142,7 +142,7 @@ const LoginPage = () => {
         {/* Registration footer link for students */}
         {!isAdminRoute && (
           <div className="mt-8 text-center border-t border-slate-100 dark:border-slate-700/50 pt-6">
-            <span className="text-sm text-slate-500 dark:text-slate-400">New to A1tiExam? </span>
+            <span className="text-sm text-slate-500 dark:text-slate-400">New to A1TIExamPrism? </span>
             <Link to="/register" className="text-sm font-bold text-brand-500 hover:underline">
               Create an account
             </Link>

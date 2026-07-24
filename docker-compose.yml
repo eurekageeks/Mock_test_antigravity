@@ -23,4 +23,8 @@ services:
     ports:
       - "3000:80"
 
+<<<<<<< HEAD
     restart: unless-stopped
+=======
+    restart: unless-stopped
+>>>>>>> 9a4376b (first commit from local repo after pipeline made with backup)

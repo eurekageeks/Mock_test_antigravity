@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import Swal from 'sweetalert2';
 import { 
   User, Mail, Phone, BookOpen, Briefcase, Plus, X, 
   CheckCircle, FileText, UploadCloud
@@ -21,6 +22,7 @@ const StudentProfile = () => {
   // Skills editing state
   const [skills, setSkills] = useState([]);
   const [newSkill, setNewSkill] = useState('');
+  const [availableTopics, setAvailableTopics] = useState([]);
   
   const [message, setMessage] = useState({ text: '', type: '' });
   const [saving, setSaving] = useState(false);
@@ -28,8 +30,12 @@ const StudentProfile = () => {
   useEffect(() => {
     const loadProfile = async () => {
       try {
-        const res = await api.get('/api/student/profile');
+        const [res, topicsRes] = await Promise.all([
+          api.get('/api/student/profile'),
+          api.get('/api/student/topics')
+        ]);
         setProfile(res.data);
+        setAvailableTopics(topicsRes.data);
         
         setName(user?.name || '');
         setMobile(user?.mobile || '');
@@ -48,9 +54,17 @@ const StudentProfile = () => {
   const handleAddSkill = (e) => {
     e.preventDefault();
     const cleanSkill = newSkill.trim();
-    if (cleanSkill && !skills.includes(cleanSkill)) {
-      setSkills([...skills, cleanSkill]);
-      setNewSkill('');
+    if (cleanSkill) {
+      if (skills.includes(cleanSkill)) {
+        Swal.fire({
+          icon: 'info',
+          title: 'Already Added',
+          text: 'You already have this skill in your profile!'
+        });
+      } else {
+        setSkills([...skills, cleanSkill]);
+        setNewSkill('');
+      }
     }
   };
 
@@ -63,6 +77,15 @@ const StudentProfile = () => {
     setSaving(true);
     setMessage({ text: '', type: '' });
 
+    // Auto-add any pending typed skill that user forgot to click "Add" for
+    let finalSkills = [...skills];
+    const cleanSkill = newSkill.trim();
+    if (cleanSkill && !skills.includes(cleanSkill)) {
+      finalSkills.push(cleanSkill);
+      setSkills(finalSkills);
+      setNewSkill('');
+    }
+
     try {
       // 1. Save core fields
       const profileRes = await api.put('/api/student/profile', {
@@ -74,7 +97,7 @@ const StudentProfile = () => {
       
       // 2. Save skills
       const skillsRes = await api.post('/api/student/skills', {
-        skills: skills
+        skills: finalSkills
       });
       
       setProfile(skillsRes.data);
@@ -237,13 +260,20 @@ const StudentProfile = () => {
 
             {/* Input to add skill */}
             <div className="flex gap-2">
-              <input
-                type="text"
+              <select
                 value={newSkill}
                 onChange={(e) => setNewSkill(e.target.value)}
-                className="flex-1 px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm dark:text-white font-medium"
-                placeholder="Type a skill (e.g. Kubernetes, Kotlin) and click Add"
-              />
+                className="flex-1 px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm dark:text-white font-medium appearance-none"
+              >
+                <option value="" disabled className="text-slate-500">
+                  Select a technical skill to add...
+                </option>
+                {availableTopics.map(topic => (
+                  <option key={topic.id} value={topic.name} className="dark:bg-slate-800 text-slate-900 dark:text-white">
+                    {topic.name}
+                  </option>
+                ))}
+              </select>
               <button
                 type="button"
                 onClick={handleAddSkill}

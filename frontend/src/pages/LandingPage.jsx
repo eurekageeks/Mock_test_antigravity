@@ -3,13 +3,28 @@ import { Link, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { 
-  ShieldCheck, Cpu, Clock, Award, Users, CheckCircle, 
-  Mail, Phone, MapPin, ChevronDown, ChevronUp, ArrowRight,
-  BookOpen, Star, HelpCircle, FileText
+  Play, BookOpen, ShieldCheck, Cpu, Code, Activity, Users,
+  ChevronDown, ChevronUp, ChevronRight, Mail, Phone, MapPin, Search,
+  ArrowRight, Star, HelpCircle, FileText, Award, Clock
 } from 'lucide-react';
+
+const sliderImages = [
+  { src: "/hero_students.jpg", alt: "Students taking online mock test illustration" },
+  { src: "/slider_exam.jpg", alt: "College students focused on taking online technical exam" },
+  { src: "/slider_dashboard.jpg", alt: "Sleek digital dashboard showing exam performance" }
+];
 
 const LandingPage = () => {
   const { user } = useAuth();
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % sliderImages.length);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, []);
+
   const navigate = useNavigate();
   const [tests, setTests] = useState([]);
   const [topics, setTopics] = useState([]);
@@ -58,7 +73,7 @@ const LandingPage = () => {
   const faqs = [
     {
       q: "How do I sign up and start taking exams?",
-      a: "Simply click the 'Sign Up' button, fill in your details, and submit. To keep A1tiExam secure, all student accounts start as 'Pending' and must be approved by our administrator before you can log in. Approval typically takes less than an hour."
+      a: "Simply click the 'Sign Up' button, fill in your details, and submit. To keep A1TIExamPrism secure, all student accounts start as 'Pending' and must be approved by our administrator before you can log in. Approval typically takes less than an hour."
     },
     {
       q: "Are the mock tests timed?",
@@ -66,14 +81,14 @@ const LandingPage = () => {
     },
     {
       q: "What types of questions are supported?",
-      a: "A1tiExam supports two main question types: Multiple Choice Questions (MCQs) with single options, and Text Answer Questions where you write out your expected response to match the answer criteria."
+      a: "A1TIExamPrism supports two main question types: Multiple Choice Questions (MCQs) with single options, and Text Answer Questions where you write out your expected response to match the answer criteria."
     },
     {
       q: "Can I review my past test performance?",
       a: "Absolutely! Once your attempt is submitted, you can view your score, passing status, percentage, correct/wrong count, and complete question reviews detailing the expected answers and explanatory notes."
     },
     {
-      q: "Is there any fee to register on A1tiExam?",
+      q: "Is there any fee to register on A1TIExamPrism?",
       a: "No, registration and basic assessments are free. Organizations can seed custom tests and topics through our administrative dashboard."
     }
   ];
@@ -131,14 +146,29 @@ const LandingPage = () => {
               </div>
             </div>
 
-            {/* Right Illustration */}
+            {/* Right Illustration Slider */}
             <div className="mt-12 lg:mt-0 lg:col-span-6 animate-fade-in animate-delay-100">
               <div className="relative mx-auto w-full max-w-lg lg:max-w-none rounded-3xl overflow-hidden glass p-3 border border-white/20 shadow-2xl dark:shadow-slate-950/50">
-                <img
-                  src="/hero_students.jpg"
-                  alt="Students taking online mock test illustration"
-                  className="w-full rounded-2xl object-cover hover:scale-[1.01] transition-transform duration-300"
-                />
+                <div className="w-full rounded-2xl overflow-hidden h-[300px] sm:h-[400px] lg:h-[450px] relative bg-slate-100 dark:bg-slate-800">
+                  {sliderImages.map((img, idx) => (
+                    <img
+                      key={idx}
+                      src={img.src}
+                      alt={img.alt}
+                      className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out ${idx === currentSlide ? 'opacity-100' : 'opacity-0'}`}
+                    />
+                  ))}
+                  {/* Pagination Dots */}
+                  <div className="absolute bottom-4 left-0 right-0 flex justify-center space-x-2 z-10">
+                    {sliderImages.map((_, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => setCurrentSlide(idx)}
+                        className={`h-2.5 w-2.5 rounded-full transition-all duration-300 ${idx === currentSlide ? 'bg-white w-6' : 'bg-white/50 hover:bg-white/80'}`}
+                      />
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
             
@@ -239,7 +269,7 @@ const LandingPage = () => {
       <section id="features" className="py-20 bg-slate-100/50 dark:bg-slate-900/40 transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white">Why Choose A1tiExam?</h2>
+            <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white">Why Choose A1TIExamPrism?</h2>
             <p className="mt-4 text-lg text-slate-500 dark:text-slate-400">
               We provide a modern platform built with high security standards, responsive interfaces, and full features.
             </p>
@@ -310,7 +340,7 @@ const LandingPage = () => {
           <div className="text-center max-w-3xl mx-auto mb-16">
             <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white">Trusted by Thousands of Students</h2>
             <p className="mt-4 text-lg text-slate-500 dark:text-slate-400">
-              Read how candidates cracked their job placements using the A1tiExam engine.
+              Read how candidates cracked their job placements using the A1TIExamPrism engine.
             </p>
           </div>
 
@@ -415,21 +445,24 @@ const LandingPage = () => {
                 <div className="space-y-6">
                   <div className="flex items-center space-x-4">
                     <Mail className="h-6 w-6 text-brand-200" />
-                    <span className="text-sm font-medium">support@a1tiexam.com</span>
+                    <span className="text-sm font-medium">a1training167@gmail.com</span>
                   </div>
                   <div className="flex items-center space-x-4">
-                    <Phone className="h-6 w-6 text-brand-200" />
-                    <span className="text-sm font-medium">+1 (555) 019-2834</span>
+                    <Phone className="h-6 w-6 flex-shrink-0 text-brand-200" />
+                    <span className="text-sm font-medium">+91 83689 79712 / +91 63804 86914</span>
                   </div>
-                  <div className="flex items-center space-x-4">
-                    <MapPin className="h-6 w-6 text-brand-200" />
-                    <span className="text-sm font-medium">100 Silicon Valley, California, USA</span>
+                  <div className="flex items-start space-x-4">
+                    <MapPin className="h-6 w-6 flex-shrink-0 text-brand-200 mt-1" />
+                    <span className="text-sm font-medium leading-relaxed">
+                      C-167, Omicron 1, 6% Abadi, Greater Noida <br />
+                      Earthcon Sanskriti, Sector 1, Greater Noida West
+                    </span>
                   </div>
                 </div>
               </div>
               
               <div className="mt-12 text-xs text-brand-200">
-                A1tiExam Support team is available 24/7.
+                A1TIExamPrism Support team is available 24/7.
               </div>
             </div>
 

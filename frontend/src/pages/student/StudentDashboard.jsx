@@ -164,12 +164,18 @@ const StudentDashboard = () => {
             <div>
               <span className="text-3xl font-black text-slate-900 dark:text-white">{stats?.profile_completion_percentage}%</span>
               <span className="text-xs text-slate-400 block mt-1">Profile Completion Meter</span>
-              <div className="w-full bg-slate-100 dark:bg-slate-700 h-2 rounded-full mt-3 overflow-hidden">
+              <div className="w-full bg-slate-100 dark:bg-slate-700 h-2 rounded-full mt-3 overflow-hidden mb-4">
                 <div 
                   className="bg-brand-500 h-full rounded-full transition-all duration-500"
                   style={{ width: `${stats?.profile_completion_percentage}%` }}
                 ></div>
               </div>
+              <button 
+                onClick={() => setShowSkillsModal(true)}
+                className="w-full py-2 bg-slate-100 dark:bg-slate-700/50 hover:bg-slate-200 dark:hover:bg-slate-700 text-brand-600 dark:text-brand-400 font-bold rounded-xl text-xs transition-colors"
+              >
+                Update Skills
+              </button>
             </div>
           </div>
 
@@ -202,24 +208,26 @@ const StudentDashboard = () => {
 
         {/* Live Mock Tests Grid */}
         <div className="space-y-6">
-          <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
-            <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white">Available Practice Exams</h2>
-            <Link to="/student/tests" className="text-sm font-bold text-brand-500 hover:underline flex items-center">
-              View All <ChevronRight className="h-4 w-4" />
-            </Link>
-          </div>
 
-          {tests.length > 0 ? (
+          {tests.filter(t => t.is_recommended).length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {tests.slice(0, 6).map((test) => (
+              {/* Show ONLY recommended tests based on skills, up to 6 total */}
+              {tests.filter(t => t.is_recommended).slice(0, 6).map((test) => (
                 <div 
                   key={test.id} 
-                  className="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-200/60 dark:border-slate-800 hover:border-brand-500/50 dark:hover:border-brand-500/50 shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col justify-between"
+                  className={`bg-white dark:bg-slate-800 rounded-3xl p-6 border ${test.is_recommended ? 'border-amber-400/50 shadow-amber-500/10' : 'border-slate-200/60 dark:border-slate-800'} hover:border-brand-500/50 dark:hover:border-brand-500/50 shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col justify-between`}
                 >
                   <div>
-                    <span className="inline-block px-3 py-1 rounded-xl text-xs font-semibold bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400 mb-4">
-                      {test.topic_name || "General"}
-                    </span>
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="inline-block px-3 py-1 rounded-xl text-xs font-semibold bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400">
+                        {test.topic_name || "General"}
+                      </span>
+                      {test.is_recommended && (
+                        <span className="flex items-center text-[10px] font-extrabold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-2.5 py-1 rounded-full">
+                          ★ Recommended
+                        </span>
+                      )}
+                    </div>
                     <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2 line-clamp-1">{test.title}</h3>
                     <p className="text-xs text-slate-500 dark:text-slate-400 mb-4 line-clamp-2">{test.description}</p>
                   </div>
@@ -241,7 +249,8 @@ const StudentDashboard = () => {
             </div>
           ) : (
             <div className="p-8 text-center bg-white dark:bg-slate-800 rounded-3xl border border-dashed border-slate-200 dark:border-slate-700">
-              <p className="text-slate-400 dark:text-slate-500 font-semibold">No mock tests available currently. Check back later!</p>
+              <p className="text-slate-400 dark:text-slate-500 font-semibold">No mock tests currently match your registered skills.</p>
+              <p className="text-xs text-slate-400 mt-2">Update your skills profile or visit the full Mock Tests page to browse all exams.</p>
             </div>
           )}
         </div>

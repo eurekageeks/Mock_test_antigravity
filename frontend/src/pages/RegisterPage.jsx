@@ -16,11 +16,26 @@ const RegisterPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
+  
+  // Password validation state
+  const [passwordFocused, setPasswordFocused] = useState(false);
+  const validations = {
+    length: password.length >= 8,
+    number: /\d/.test(password),
+    special: /[!@#$%^&*(),.?":{}|<>]/.test(password)
+  };
+  const isPasswordValid = validations.length && validations.number && validations.special;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+
+    if (!isPasswordValid) {
+      setError("Please ensure your password meets all requirements.");
+      setLoading(false);
+      return;
+    }
 
     if (password !== confirmPassword) {
       setError("Passwords do not match.");
@@ -52,7 +67,7 @@ const RegisterPage = () => {
           </div>
           <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white mb-4">Registration Successful!</h2>
           <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed mb-8">
-            Thank you for registering on A1tiExam. Your account status is: <strong className="text-amber-500">Pending</strong>.<br /><br />
+            Thank you for registering on A1TIExamPrism. Your account status is: <strong className="text-amber-500">Pending</strong>.<br /><br />
             Your profile has been queued for administrator approval. You will be able to log in to attempt tests once approved by our administrator.
           </p>
           <div className="space-y-3">
@@ -115,7 +130,7 @@ const RegisterPage = () => {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm dark:text-white"
-                placeholder="John Doe"
+                placeholder="Enter your name"
               />
             </div>
           </div>
@@ -132,7 +147,7 @@ const RegisterPage = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm dark:text-white"
-                placeholder="john@example.com"
+                placeholder="name@example.com"
               />
             </div>
           </div>
@@ -149,7 +164,7 @@ const RegisterPage = () => {
                 value={mobile}
                 onChange={(e) => setMobile(e.target.value)}
                 className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm dark:text-white"
-                placeholder="+1 (555) 000-0000"
+                placeholder="+91 98765 43210"
               />
             </div>
           </div>
@@ -166,9 +181,27 @@ const RegisterPage = () => {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  onFocus={() => setPasswordFocused(true)}
+                  onBlur={() => setPasswordFocused(false)}
                   className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm dark:text-white"
                   placeholder="••••••••"
                 />
+                
+                {/* Password Validation Popup */}
+                {passwordFocused && (
+                  <div className="absolute z-20 left-0 top-full mt-2 w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl text-xs space-y-1.5 animate-fade-in">
+                    <div className="font-bold text-slate-700 dark:text-slate-300 mb-2 border-b border-slate-100 dark:border-slate-700 pb-1">Password Requirements:</div>
+                    <div className={`flex items-center space-x-2 ${validations.length ? 'text-emerald-500' : 'text-slate-500 dark:text-slate-400'}`}>
+                      <CheckCircle className="h-3.5 w-3.5" /> <span>At least 8 characters</span>
+                    </div>
+                    <div className={`flex items-center space-x-2 ${validations.number ? 'text-emerald-500' : 'text-slate-500 dark:text-slate-400'}`}>
+                      <CheckCircle className="h-3.5 w-3.5" /> <span>Contains a number</span>
+                    </div>
+                    <div className={`flex items-center space-x-2 ${validations.special ? 'text-emerald-500' : 'text-slate-500 dark:text-slate-400'}`}>
+                      <CheckCircle className="h-3.5 w-3.5" /> <span>Contains a special character</span>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 

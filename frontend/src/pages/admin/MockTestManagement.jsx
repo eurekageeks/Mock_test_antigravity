@@ -5,6 +5,7 @@ import {
   FileText, Plus, Edit3, Trash2, BookOpen, Clock, 
   Award, ShieldAlert, Check, X, Eye, HelpCircle, Save 
 } from 'lucide-react';
+import Swal from 'sweetalert2';
 
 const MockTestManagement = () => {
   const [tests, setTests] = useState([]);
@@ -126,8 +127,17 @@ const MockTestManagement = () => {
   };
 
   const handleDeleteTest = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this mock test? This deletes all associated questions and attempts. This cannot be undone.")) return;
-    setMessage({ text: '', type: '' });
+    const result = await Swal.fire({
+      title: 'Are you sure?',
+      text: "This deletes all associated questions and attempts. This cannot be undone.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Yes, delete it!'
+    });
+    if (!result.isConfirmed) return;
+
     try {
       await api.delete(`/api/admin/tests/${id}`);
       setMessage({ text: "Mock test deleted successfully.", type: 'success' });

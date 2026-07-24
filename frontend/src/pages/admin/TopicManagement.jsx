@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
 import { Layers, Plus, Edit3, Trash2, X, Check, Save } from 'lucide-react';
+import Swal from 'sweetalert2';
 
 const TopicManagement = () => {
   const [topics, setTopics] = useState([]);
@@ -80,15 +81,24 @@ const TopicManagement = () => {
   };
 
   const handleDeleteTopic = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this topic category? This deletes all associated mock tests and questions inside them. This cannot be undone.")) return;
-    setMessage({ text: '', type: '' });
+    const result = await Swal.fire({
+      title: 'Are you sure?',
+      text: "This deletes all associated mock tests and questions. This cannot be undone.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Yes, delete it!'
+    });
+    if (!result.isConfirmed) return;
+
     try {
       await api.delete(`/api/admin/topics/${id}`);
-      setMessage({ text: "Topic category deleted successfully.", type: 'success' });
       fetchTopics();
+      setMessage({ text: "Topic deleted successfully.", type: "success" });
     } catch (err) {
       console.error("Failed to delete topic:", err);
-      setMessage({ text: "Failed to delete topic category.", type: 'error' });
+      setMessage({ text: "Failed to delete topic. Ensure no active tests depend on it.", type: "error" });
     }
   };
 

@@ -181,7 +181,7 @@ def list_student_tests(
 
     tests = query.all()
 
-    # Compute student skill names — strip & lowercase for case-insensitive matching
+    # Compute student skill names — strip and lowercase for case-insensitive matching
     skill_names = set()
     if current_user:
         profile = db.query(StudentProfile).filter(StudentProfile.user_id == current_user.id).first()
@@ -193,7 +193,7 @@ def list_student_tests(
     for test in tests:
         test.topic_name = test.topic.name
         test.question_count = len(test.questions)
-        # Strip + lowercase both sides for bulletproof case-insensitive match
+        # Strip and lowercase both sides for case-insensitive match
         test.is_recommended = (test.topic.name.strip().lower() in skill_names) if skill_names else False
         if test.is_recommended:
             recommended.append(test)

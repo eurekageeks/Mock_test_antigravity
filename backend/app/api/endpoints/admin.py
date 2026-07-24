@@ -465,7 +465,20 @@ async def upload_pdf_questions(
         pdf_text,
         flags=re.MULTILINE | re.IGNORECASE
     )
-    # Remove leading empty block from split
+
+    # The 0th element of re.split is the text *before* the first question marker.
+    # We treat this as the heading/title if it has content.
+    heading_text = question_blocks[0].strip() if question_blocks else ""
+    if heading_text:
+        # Use only the first line of the heading if it's multi-line, up to 100 chars
+        test_title = heading_text.splitlines()[0][:100]
+        test.title = test_title
+        db.commit()
+
+    # Remove the heading block so we only process actual questions
+    if len(question_blocks) > 0:
+        question_blocks = question_blocks[1:]
+        
     question_blocks = [b.strip() for b in question_blocks if b.strip()]
 
     created_questions = []

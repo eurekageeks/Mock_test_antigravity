@@ -6,6 +6,7 @@ import {
   HelpCircle, Save, X, AlertCircle, Upload, FileText,
   CheckCircle, Loader, Eye
 } from 'lucide-react';
+import Swal from 'sweetalert2';
 
 const QuestionManagement = () => {
   const { test_id } = useParams();
@@ -140,13 +141,24 @@ const QuestionManagement = () => {
   };
 
   const handleDeleteQuestion = async (qId) => {
-    if (!window.confirm("Are you sure you want to delete this question?")) return;
+    const result = await Swal.fire({
+      title: 'Are you sure?',
+      text: "You won't be able to revert this!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Yes, delete it!'
+    });
+    if (!result.isConfirmed) return;
+
     try {
       await api.delete(`/api/admin/questions/${qId}`);
-      showMessage("Question deleted.");
       fetchQuestions();
+      setMessage({ text: "Question deleted successfully.", type: "success" });
     } catch (err) {
-      showMessage("Failed to delete question.", 'error');
+      console.error("Failed to delete question:", err);
+      setMessage({ text: "Failed to delete question.", type: "error" });
     }
   };
 

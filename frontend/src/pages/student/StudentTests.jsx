@@ -177,20 +177,6 @@ const StudentTests = () => {
                 </div>
               </div>
             )}
-
-            {/* All / Other Tests */}
-            {otherTests.length > 0 && (
-              <div className="space-y-4">
-                {recommendedTests.length > 0 && (
-                  <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">All Other Tests</h2>
-                )}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {otherTests.map(test => (
-                    <TestCard key={test.id} test={test} showBadge={false} />
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         ) : (
           <div className="p-12 text-center bg-white dark:bg-slate-800 rounded-[32px] border border-slate-200/50 dark:border-slate-750 shadow-sm max-w-md mx-auto">

@@ -4,6 +4,7 @@ import {
   Search, ShieldCheck, ShieldAlert, Trash2, Eye, 
   X, Check, AlertCircle, Clock, Award, FileText
 } from 'lucide-react';
+import Swal from 'sweetalert2';
 
 const StudentManagement = () => {
   const [students, setStudents] = useState([]);
@@ -11,6 +12,9 @@ const StudentManagement = () => {
   const [statusFilter, setStatusFilter] = useState('');
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState({ text: '', type: '' });
+  
+  // Bulk Selection State
+  const [selectedStudentIds, setSelectedStudentIds] = useState([]);
   
   // Attempts Modal state
   const [selectedStudent, setSelectedStudent] = useState(null);
@@ -50,15 +54,77 @@ const StudentManagement = () => {
   };
 
   const handleDeleteStudent = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this student profile? This deletes all associated test attempts and cannot be undone.")) return;
+    const result = await Swal.fire({
+      title: 'Are you sure?',
+      text: "This deletes the student profile and all associated test attempts. This cannot be undone.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Yes, delete it!'
+    });
+    if (!result.isConfirmed) return;
+    
     setMessage({ text: '', type: '' });
     try {
       await api.delete(`/api/admin/students/${id}`);
       setMessage({ text: "Student account deleted successfully.", type: 'success' });
       fetchStudents();
+      setSelectedStudentIds(prev => prev.filter(sId => sId !== id));
     } catch (err) {
       console.error("Failed to delete student:", err);
       setMessage({ text: "Failed to delete student account.", type: 'error' });
+    }
+  };
+
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedStudentIds(students.map(s => s.id));
+    } else {
+      setSelectedStudentIds([]);
+    }
+  };
+
+  const handleSelectStudent = (id) => {
+    setSelectedStudentIds(prev => 
+      prev.includes(id) ? prev.filter(sId => sId !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkDelete = async () => {
+    const result = await Swal.fire({
+      title: 'Delete Multiple Students?',
+      text: `You are about to delete ${selectedStudentIds.length} selected students. This cannot be undone.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Yes, delete all!'
+    });
+    if (!result.isConfirmed) return;
+
+    setMessage({ text: '', type: '' });
+    try {
+      await Promise.all(selectedStudentIds.map(id => api.delete(`/api/admin/students/${id}`)));
+      setMessage({ text: `Successfully deleted ${selectedStudentIds.length} students.`, type: 'success' });
+      fetchStudents();
+      setSelectedStudentIds([]);
+    } catch (err) {
+      console.error("Failed bulk delete:", err);
+      setMessage({ text: "Failed to delete some students.", type: 'error' });
+    }
+  };
+
+  const handleBulkStatus = async (newStatus) => {
+    setMessage({ text: '', type: '' });
+    try {
+      await Promise.all(selectedStudentIds.map(id => api.put(`/api/admin/students/${id}/status`, { status: newStatus })));
+      setMessage({ text: `Successfully updated status to '${newStatus}' for ${selectedStudentIds.length} students.`, type: 'success' });
+      fetchStudents();
+      setSelectedStudentIds([]);
+    } catch (err) {
+      console.error("Failed bulk status update:", err);
+      setMessage({ text: "Failed to update some student statuses.", type: 'error' });
     }
   };
 
@@ -128,6 +194,35 @@ const StudentManagement = () => {
           </div>
         </div>
 
+        {/* Bulk Actions Banner */}
+        {selectedStudentIds.length > 0 && (
+          <div className="flex items-center justify-between bg-brand-50 dark:bg-brand-500/10 p-4 rounded-[24px] border border-brand-200 dark:border-brand-500/20 shadow-sm animate-fade-in">
+            <span className="text-sm font-bold text-brand-700 dark:text-brand-400">
+              {selectedStudentIds.length} student(s) selected
+            </span>
+            <div className="flex gap-2">
+              <button 
+                onClick={() => handleBulkStatus('approved')}
+                className="px-4 py-2 bg-emerald-500 text-white rounded-xl text-xs font-bold hover:bg-emerald-600 transition-colors"
+              >
+                Approve All
+              </button>
+              <button 
+                onClick={() => handleBulkStatus('disabled')}
+                className="px-4 py-2 bg-amber-500 text-white rounded-xl text-xs font-bold hover:bg-amber-600 transition-colors"
+              >
+                Disable All
+              </button>
+              <button 
+                onClick={handleBulkDelete}
+                className="px-4 py-2 bg-rose-500 text-white rounded-xl text-xs font-bold hover:bg-rose-600 transition-colors"
+              >
+                Delete All
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Students Table */}
         {loading ? (
           <div className="h-40 flex items-center justify-center">
@@ -139,6 +234,14 @@ const StudentManagement = () => {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-slate-100 dark:border-slate-700/50 text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50/50 dark:bg-slate-900/30">
+                    <th className="py-4 px-6 w-12">
+                      <input 
+                        type="checkbox" 
+                        checked={students.length > 0 && selectedStudentIds.length === students.length}
+                        onChange={handleSelectAll}
+                        className="rounded border-slate-300 text-brand-600 focus:ring-brand-500 bg-slate-50 dark:bg-slate-800 dark:border-slate-600 cursor-pointer"
+                      />
+                    </th>
                     <th className="py-4 px-6">ID</th>
                     <th className="py-4 px-6">Student Info</th>
                     <th className="py-4 px-6">Mobile</th>
@@ -150,6 +253,14 @@ const StudentManagement = () => {
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50 text-sm font-medium">
                   {students.map((st) => (
                     <tr key={st.id} className="hover:bg-slate-50/30 dark:hover:bg-slate-750/10 transition-colors">
+                      <td className="py-5 px-6">
+                        <input 
+                          type="checkbox" 
+                          checked={selectedStudentIds.includes(st.id)}
+                          onChange={() => handleSelectStudent(st.id)}
+                          className="rounded border-slate-300 text-brand-600 focus:ring-brand-500 bg-slate-50 dark:bg-slate-800 dark:border-slate-600 cursor-pointer"
+                        />
+                      </td>
                       <td className="py-5 px-6 text-slate-400">#{st.id}</td>
                       <td className="py-5 px-6">
                         <span className="block text-slate-900 dark:text-white font-bold">{st.name}</span>
