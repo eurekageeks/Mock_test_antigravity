@@ -1,27 +1,21 @@
-version: "3.9"
-
 services:
-
   backend:
     build:
       context: ./backend
-
-    container_name: fastapi_backend
+    container_name: a1tiexamprism_backend
 
     ports:
       - "8000:8000"
 
     volumes:
-      - ./backend:/app
-      - /home/ubuntu/a1tiexamprism-data:/app/data
+      - /root/data/a1tiexamprism:/app/database
 
     restart: unless-stopped
 
   frontend:
     build:
       context: ./frontend
-
-    container_name: react_frontend
+    container_name: a1tiexamprism_frontend
 
     depends_on:
       - backend
