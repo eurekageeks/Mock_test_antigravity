@@ -5,6 +5,7 @@ services:
   backend:
     build:
       context: ./backend
+
     container_name: fastapi_backend
 
     ports:
@@ -12,13 +13,14 @@ services:
 
     volumes:
       - ./backend:/app
-      - sqlite_data:/app/data
+      - /home/ubuntu/a1tiexamprism-data:/app/data
 
     restart: unless-stopped
 
   frontend:
     build:
       context: ./frontend
+
     container_name: react_frontend
 
     depends_on:
@@ -28,6 +30,3 @@ services:
       - "3000:80"
 
     restart: unless-stopped
-
-volumes:
-  sqlite_data:
