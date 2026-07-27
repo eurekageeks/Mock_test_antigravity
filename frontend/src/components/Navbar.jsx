@@ -34,7 +34,7 @@ const Navbar = () => {
               <GraduationCap className="h-6 w-6" />
             </div>
             <span className="font-extrabold text-xl tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
-              A1TIEXAM<span className="text-brand-500">PRISM</span>
+              A1TIExam<span className="text-brand-500">PRISM</span>
             </span>
           </Link>
 
