@@ -41,6 +41,91 @@ const QuestionManagement = () => {
 
   const [message, setMessage] = useState({ text: '', type: '' });
 
+  // Bulk management states
+  const [selectedQuestionIds, setSelectedQuestionIds] = useState([]);
+  const [bulkMarksValue, setBulkMarksValue] = useState(2.0);
+
+  const handleSelectAllQuestions = (e) => {
+    if (e.target.checked) {
+      setSelectedQuestionIds(questions.map(q => q.id));
+    } else {
+      setSelectedQuestionIds([]);
+    }
+  };
+
+  const handleSelectQuestion = (id) => {
+    setSelectedQuestionIds(prev =>
+      prev.includes(id) ? prev.filter(qId => qId !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkDeleteQuestions = async () => {
+    if (questions.length === 0) {
+      return showMessage("No questions to delete.", "error");
+    }
+    const count = selectedQuestionIds.length > 0 ? selectedQuestionIds.length : questions.length;
+
+    const result = await Swal.fire({
+      title: selectedQuestionIds.length > 0 ? `Delete ${count} Selected Questions?` : 'Delete ALL Questions?',
+      text: "This action cannot be undone and will permanently remove the questions from this mock test.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: selectedQuestionIds.length > 0 ? 'Yes, delete selected!' : 'Yes, delete ALL!'
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      await api.post(`/api/admin/tests/${test_id}/questions/bulk-delete`, {
+        question_ids: selectedQuestionIds.length > 0 ? selectedQuestionIds : []
+      });
+      showMessage(`Successfully deleted ${count} question(s)!`);
+      setSelectedQuestionIds([]);
+      fetchQuestions();
+    } catch (err) {
+      console.error("Bulk delete failed:", err);
+      showMessage("Failed to delete questions.", "error");
+    }
+  };
+
+  const handleBulkUpdateMarks = async () => {
+    if (questions.length === 0) {
+      return showMessage("No questions to update marks for.", "error");
+    }
+    if (!bulkMarksValue || isNaN(bulkMarksValue) || Number(bulkMarksValue) <= 0) {
+      return showMessage("Please enter a valid positive marks value.", "error");
+    }
+
+    const count = selectedQuestionIds.length > 0 ? selectedQuestionIds.length : questions.length;
+
+    const result = await Swal.fire({
+      title: selectedQuestionIds.length > 0 ? `Set ${bulkMarksValue} Marks for ${count} Selected Questions?` : `Set ${bulkMarksValue} Marks for ALL Questions?`,
+      text: "This will overwrite the marks assigned to these questions.",
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#3b82f6',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Yes, update marks!'
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      await api.post(`/api/admin/tests/${test_id}/questions/bulk-update-marks`, {
+        question_ids: selectedQuestionIds.length > 0 ? selectedQuestionIds : [],
+        marks: Number(bulkMarksValue)
+      });
+      showMessage(`Successfully set marks to ${bulkMarksValue} for ${count} question(s)!`);
+      setSelectedQuestionIds([]);
+      fetchQuestions();
+    } catch (err) {
+      console.error("Bulk marks update failed:", err);
+      showMessage("Failed to update marks.", "error");
+    }
+  };
+
   const fetchQuestions = async () => {
     try {
       const [testRes, qRes] = await Promise.all([
@@ -49,6 +134,7 @@ const QuestionManagement = () => {
       ]);
       setTest(testRes.data);
       setQuestions(qRes.data);
+      setSelectedQuestionIds([]);
     } catch (err) {
       console.error("Failed to load question logs:", err);
     } finally {
@@ -246,9 +332,14 @@ const QuestionManagement = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="space-y-2">
-            <Link to="/admin/tests" className="inline-flex items-center text-xs font-bold text-slate-400 hover:text-slate-600">
-              <ChevronLeft className="h-4 w-4 mr-0.5" /> Back to mock test configuration
-            </Link>
+            <div className="flex items-center gap-4">
+              <Link to="/admin/tests" className="inline-flex items-center text-xs font-bold text-slate-400 hover:text-slate-600">
+                <ChevronLeft className="h-4 w-4 mr-0.5" /> Back to mock test configuration
+              </Link>
+              <Link to={`/admin/tests?edit=${test_id}`} className="inline-flex items-center px-2.5 py-1 bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 text-xs font-bold rounded-lg transition-colors">
+                <Edit3 className="h-3 w-3 mr-1" /> Edit Test Settings
+              </Link>
+            </div>
             <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
               Manage Questions
             </h1>
@@ -443,6 +534,65 @@ Answer: B`}</pre>
               </div>
             )}
 
+            {/* Bulk Actions Toolbar */}
+            {questions.length > 0 && (
+              <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={questions.length > 0 && selectedQuestionIds.length === questions.length}
+                      onChange={handleSelectAllQuestions}
+                      className="rounded border-slate-300 text-brand-600 focus:ring-brand-500 bg-slate-50 dark:bg-slate-900 h-4 w-4 cursor-pointer"
+                    />
+                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                      {selectedQuestionIds.length > 0 ? `Selected (${selectedQuestionIds.length})` : 'Select All'}
+                    </span>
+                  </label>
+
+                  <button
+                    onClick={handleBulkDeleteQuestions}
+                    className="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 rounded-xl text-xs font-bold flex items-center transition-colors shadow-sm"
+                    title="Delete Selected or All Questions"
+                  >
+                    <Trash2 className="h-3.5 w-3.5 mr-1" />
+                    {selectedQuestionIds.length > 0 ? `Delete Selected (${selectedQuestionIds.length})` : 'Delete All Questions'}
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-2 border-t sm:border-t-0 pt-3 sm:pt-0 border-slate-100 dark:border-slate-700">
+                  <span className="text-xs font-bold text-slate-400 uppercase">Set Marks:</span>
+                  <select
+                    value={bulkMarksValue}
+                    onChange={(e) => setBulkMarksValue(e.target.value)}
+                    className="px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-bold dark:text-white"
+                  >
+                    <option value="1">1.0 Mark</option>
+                    <option value="2">2.0 Marks</option>
+                    <option value="3">3.0 Marks</option>
+                    <option value="4">4.0 Marks</option>
+                    <option value="5">5.0 Marks</option>
+                    <option value="10">10.0 Marks</option>
+                  </select>
+                  <input
+                    type="number"
+                    step="0.5"
+                    min="0.5"
+                    value={bulkMarksValue}
+                    onChange={(e) => setBulkMarksValue(e.target.value)}
+                    className="w-16 px-2 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent text-xs font-bold dark:text-white text-center"
+                    placeholder="Marks"
+                  />
+                  <button
+                    onClick={handleBulkUpdateMarks}
+                    className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-xs font-bold shadow-sm transition-all"
+                  >
+                    Apply {selectedQuestionIds.length > 0 ? `to (${selectedQuestionIds.length})` : 'to All'}
+                  </button>
+                </div>
+              </div>
+            )}
+
             {questions.length > 0 ? (
               <div className="space-y-4">
                 {questions.map((q, idx) => (
@@ -456,8 +606,16 @@ Answer: B`}</pre>
                       draggedIdx === idx ? 'opacity-30 border-dashed border-brand-500' : ''
                     }`}
                   >
-                    <div className="cursor-grab p-1 text-slate-300 dark:text-slate-600 hover:text-brand-500 shrink-0 self-center">
-                      <GripVertical className="h-5 w-5" />
+                    <div className="flex items-center gap-2 shrink-0 self-center">
+                      <input
+                        type="checkbox"
+                        checked={selectedQuestionIds.includes(q.id)}
+                        onChange={() => handleSelectQuestion(q.id)}
+                        className="rounded border-slate-300 text-brand-600 focus:ring-brand-500 bg-slate-50 dark:bg-slate-900 h-4 w-4 cursor-pointer"
+                      />
+                      <div className="cursor-grab p-1 text-slate-300 dark:text-slate-600 hover:text-brand-500">
+                        <GripVertical className="h-5 w-5" />
+                      </div>
                     </div>
                     <div className="flex-1 space-y-3 min-w-0">
                       <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-750/30 pb-2">

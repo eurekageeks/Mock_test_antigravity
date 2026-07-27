@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
 import { 
   Search, ShieldCheck, ShieldAlert, Trash2, Eye, 
-  X, Check, AlertCircle, Clock, Award, FileText
+  X, Check, AlertCircle, Clock, Award, FileText, Calendar, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 
@@ -12,6 +12,12 @@ const StudentManagement = () => {
   const [statusFilter, setStatusFilter] = useState('');
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState({ text: '', type: '' });
+  
+  // Date and Pagination states
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   
   // Bulk Selection State
   const [selectedStudentIds, setSelectedStudentIds] = useState([]);
@@ -39,7 +45,12 @@ const StudentManagement = () => {
 
   useEffect(() => {
     fetchStudents();
+    setCurrentPage(1);
   }, [search, statusFilter]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [fromDate, toDate]);
 
   const handleUpdateStatus = async (id, newStatus) => {
     setMessage({ text: '', type: '' });
@@ -77,9 +88,9 @@ const StudentManagement = () => {
     }
   };
 
-  const handleSelectAll = (e) => {
+  const handleSelectAll = (e, filteredList) => {
     if (e.target.checked) {
-      setSelectedStudentIds(students.map(s => s.id));
+      setSelectedStudentIds(filteredList.map(s => s.id));
     } else {
       setSelectedStudentIds([]);
     }
@@ -164,33 +175,57 @@ const StudentManagement = () => {
         )}
 
         {/* Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 bg-white dark:bg-slate-800 p-4 rounded-[24px] border border-slate-200/50 dark:border-slate-700/50 shadow-sm">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 bg-white dark:bg-slate-800 p-4 rounded-[24px] border border-slate-200/50 dark:border-slate-700/50 shadow-sm items-end">
           {/* Search bar */}
-          <div className="relative md:col-span-8">
-            <span className="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400">
-              <Search className="h-5 w-5" />
-            </span>
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm dark:text-white font-medium"
-              placeholder="Search students by name or email..."
-            />
+          <div className="relative md:col-span-5">
+            <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Search Students</label>
+            <div className="relative">
+              <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                <Search className="h-4 w-4" />
+              </span>
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-xs dark:text-white font-medium"
+                placeholder="Name or email..."
+              />
+            </div>
           </div>
 
           {/* Status Dropdown */}
-          <div className="relative md:col-span-4">
+          <div className="relative md:col-span-3">
+            <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Status</label>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm dark:text-white font-medium dark:bg-slate-800"
+              className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-xs dark:text-white font-medium dark:bg-slate-800"
             >
               <option value="">All Statuses</option>
               <option value="pending">Pending</option>
               <option value="approved">Approved</option>
               <option value="disabled">Disabled</option>
             </select>
+          </div>
+
+          {/* Date Filters */}
+          <div className="relative md:col-span-2">
+            <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Joined From</label>
+            <input
+              type="date"
+              value={fromDate}
+              onChange={(e) => setFromDate(e.target.value)}
+              className="w-full px-2.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent text-xs dark:text-white font-medium"
+            />
+          </div>
+          <div className="relative md:col-span-2">
+            <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Joined To</label>
+            <input
+              type="date"
+              value={toDate}
+              onChange={(e) => setToDate(e.target.value)}
+              className="w-full px-2.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent text-xs dark:text-white font-medium"
+            />
           </div>
         </div>
 
@@ -228,112 +263,153 @@ const StudentManagement = () => {
           <div className="h-40 flex items-center justify-center">
             <div className="h-8 w-8 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
           </div>
-        ) : students.length > 0 ? (
-          <div className="bg-white dark:bg-slate-800 rounded-[32px] border border-slate-200/50 dark:border-slate-700/50 shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-slate-100 dark:border-slate-700/50 text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50/50 dark:bg-slate-900/30">
-                    <th className="py-4 px-6 w-12">
-                      <input 
-                        type="checkbox" 
-                        checked={students.length > 0 && selectedStudentIds.length === students.length}
-                        onChange={handleSelectAll}
-                        className="rounded border-slate-300 text-brand-600 focus:ring-brand-500 bg-slate-50 dark:bg-slate-800 dark:border-slate-600 cursor-pointer"
-                      />
-                    </th>
-                    <th className="py-4 px-6">ID</th>
-                    <th className="py-4 px-6">Student Info</th>
-                    <th className="py-4 px-6">Mobile</th>
-                    <th className="py-4 px-6">Joined Date</th>
-                    <th className="py-4 px-6">Status</th>
-                    <th className="py-4 px-6 text-center">Controls</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50 text-sm font-medium">
-                  {students.map((st) => (
-                    <tr key={st.id} className="hover:bg-slate-50/30 dark:hover:bg-slate-750/10 transition-colors">
-                      <td className="py-5 px-6">
-                        <input 
-                          type="checkbox" 
-                          checked={selectedStudentIds.includes(st.id)}
-                          onChange={() => handleSelectStudent(st.id)}
-                          className="rounded border-slate-300 text-brand-600 focus:ring-brand-500 bg-slate-50 dark:bg-slate-800 dark:border-slate-600 cursor-pointer"
-                        />
-                      </td>
-                      <td className="py-5 px-6 text-slate-400">#{st.id}</td>
-                      <td className="py-5 px-6">
-                        <span className="block text-slate-900 dark:text-white font-bold">{st.name}</span>
-                        <span className="block text-slate-400 text-xs font-normal">{st.email}</span>
-                      </td>
-                      <td className="py-5 px-6 text-slate-500 font-mono text-xs">{st.mobile || 'N/A'}</td>
-                      <td className="py-5 px-6 text-slate-500 text-xs">
-                        {new Date(st.created_at).toLocaleDateString()}
-                      </td>
-                      <td className="py-5 px-6">
-                        <span className={`inline-flex px-2.5 py-1 rounded-lg text-[10px] font-extrabold uppercase ${
-                          st.status === 'approved'
-                            ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-                            : st.status === 'pending'
-                            ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 animate-pulse'
-                            : 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
-                        }`}>
-                          {st.status}
-                        </span>
-                      </td>
-                      <td className="py-5 px-6">
-                        <div className="flex items-center justify-center space-x-2">
-                          {/* Approve control */}
-                          {st.status !== 'approved' && (
-                            <button
-                              onClick={() => handleUpdateStatus(st.id, 'approved')}
-                              className="p-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 transition-colors"
-                              title="Approve / Enable Student"
-                            >
-                              <Check className="h-4.5 w-4.5" />
-                            </button>
-                          )}
-                          
-                          {/* Disable control */}
-                          {st.status === 'approved' && (
-                            <button
-                              onClick={() => handleUpdateStatus(st.id, 'disabled')}
-                              className="p-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 transition-colors"
-                              title="Disable Student"
-                            >
-                              <ShieldAlert className="h-4.5 w-4.5" />
-                            </button>
-                          )}
-
-                          {/* View attempts control */}
-                          <button
-                            onClick={() => handleViewAttempts(st)}
-                            className="p-2 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 transition-colors"
-                            title="View Exam Attempts"
-                          >
-                            <Eye className="h-4.5 w-4.5" />
-                          </button>
-
-                          {/* Delete control */}
-                          <button
-                            onClick={() => handleDeleteStudent(st.id)}
-                            className="p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 transition-colors"
-                            title="Delete Student"
-                          >
-                            <Trash2 className="h-4.5 w-4.5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
         ) : (
-          <div className="p-8 text-center bg-white dark:bg-slate-800 rounded-3xl border border-dashed border-slate-200 dark:border-slate-700">
-            <p className="text-slate-400 dark:text-slate-500 font-semibold">No students match your query criteria.</p>
-          </div>
+          (() => {
+            const dateFilteredStudents = students.filter(st => {
+              if (!st.created_at) return true;
+              const stDate = new Date(st.created_at).toISOString().split('T')[0];
+              if (fromDate && stDate < fromDate) return false;
+              if (toDate && stDate > toDate) return false;
+              return true;
+            });
+
+            const totalPages = Math.max(1, Math.ceil(dateFilteredStudents.length / itemsPerPage));
+            const paginatedStudents = dateFilteredStudents.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+            return dateFilteredStudents.length > 0 ? (
+              <div className="bg-white dark:bg-slate-800 rounded-[32px] border border-slate-200/50 dark:border-slate-700/50 shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-100 dark:border-slate-700/50 text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50/50 dark:bg-slate-900/30">
+                        <th className="py-4 px-6 w-12">
+                          <input 
+                            type="checkbox" 
+                            checked={dateFilteredStudents.length > 0 && selectedStudentIds.length === dateFilteredStudents.length}
+                            onChange={(e) => handleSelectAll(e, dateFilteredStudents)}
+                            className="rounded border-slate-300 text-brand-600 focus:ring-brand-500 bg-slate-50 dark:bg-slate-800 dark:border-slate-600 cursor-pointer"
+                          />
+                        </th>
+                        <th className="py-4 px-6">ID</th>
+                        <th className="py-4 px-6">Student Info</th>
+                        <th className="py-4 px-6">Mobile</th>
+                        <th className="py-4 px-6">Joined Date</th>
+                        <th className="py-4 px-6">Status</th>
+                        <th className="py-4 px-6 text-center">Controls</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50 text-sm font-medium">
+                      {paginatedStudents.map((st) => (
+                        <tr key={st.id} className="hover:bg-slate-50/30 dark:hover:bg-slate-750/10 transition-colors">
+                          <td className="py-5 px-6">
+                            <input 
+                              type="checkbox" 
+                              checked={selectedStudentIds.includes(st.id)}
+                              onChange={() => handleSelectStudent(st.id)}
+                              className="rounded border-slate-300 text-brand-600 focus:ring-brand-500 bg-slate-50 dark:bg-slate-800 dark:border-slate-600 cursor-pointer"
+                            />
+                          </td>
+                          <td className="py-5 px-6 text-slate-400">#{st.id}</td>
+                          <td className="py-5 px-6">
+                            <span className="block text-slate-900 dark:text-white font-bold">{st.name}</span>
+                            <span className="block text-slate-400 text-xs font-normal">{st.email}</span>
+                          </td>
+                          <td className="py-5 px-6 text-slate-500 font-mono text-xs">{st.mobile || 'N/A'}</td>
+                          <td className="py-5 px-6 text-slate-500 text-xs">
+                            {new Date(st.created_at).toLocaleDateString()}
+                          </td>
+                          <td className="py-5 px-6">
+                            <span className={`inline-flex px-2.5 py-1 rounded-lg text-[10px] font-extrabold uppercase ${
+                              st.status === 'approved'
+                                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                                : st.status === 'pending'
+                                ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 animate-pulse'
+                                : 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
+                            }`}>
+                              {st.status}
+                            </span>
+                          </td>
+                          <td className="py-5 px-6">
+                            <div className="flex items-center justify-center space-x-2">
+                              {/* Approve control */}
+                              {st.status !== 'approved' && (
+                                <button
+                                  onClick={() => handleUpdateStatus(st.id, 'approved')}
+                                  className="p-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 transition-colors"
+                                  title="Approve / Enable Student"
+                                >
+                                  <Check className="h-4.5 w-4.5" />
+                                </button>
+                              )}
+                              
+                              {/* Disable control */}
+                              {st.status === 'approved' && (
+                                <button
+                                  onClick={() => handleUpdateStatus(st.id, 'disabled')}
+                                  className="p-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 transition-colors"
+                                  title="Disable Student"
+                                >
+                                  <ShieldAlert className="h-4.5 w-4.5" />
+                                </button>
+                              )}
+
+                              {/* View attempts control */}
+                              <button
+                                onClick={() => handleViewAttempts(st)}
+                                className="p-2 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 transition-colors"
+                                title="View Exam Attempts"
+                              >
+                                <Eye className="h-4.5 w-4.5" />
+                              </button>
+
+                              {/* Delete control */}
+                              <button
+                                onClick={() => handleDeleteStudent(st.id)}
+                                className="p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 transition-colors"
+                                title="Delete Student"
+                              >
+                                <Trash2 className="h-4.5 w-4.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Pagination Controls */}
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-slate-100 dark:border-slate-700/50 bg-slate-50/30 dark:bg-slate-900/20">
+                  <span className="text-xs text-slate-500 dark:text-slate-400">
+                    Showing <strong className="text-slate-800 dark:text-white">{(currentPage - 1) * itemsPerPage + 1}</strong> to <strong className="text-slate-800 dark:text-white">{Math.min(currentPage * itemsPerPage, dateFilteredStudents.length)}</strong> of <strong className="text-slate-800 dark:text-white">{dateFilteredStudents.length}</strong> students
+                  </span>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold disabled:opacity-40 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center"
+                    >
+                      <ChevronLeft className="h-3.5 w-3.5 mr-1" /> Previous
+                    </button>
+                    <span className="px-3 py-1 bg-brand-500/10 text-brand-600 dark:text-brand-400 rounded-xl text-xs font-bold">
+                      Page {currentPage} of {totalPages}
+                    </span>
+                    <button
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                      className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold disabled:opacity-40 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center"
+                    >
+                      Next <ChevronRight className="h-3.5 w-3.5 ml-1" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="p-8 text-center bg-white dark:bg-slate-800 rounded-3xl border border-dashed border-slate-200 dark:border-slate-700">
+                <p className="text-slate-400 dark:text-slate-500 font-semibold">No students match your search and date criteria.</p>
+              </div>
+            );
+          })()
         )}
 
       </div>

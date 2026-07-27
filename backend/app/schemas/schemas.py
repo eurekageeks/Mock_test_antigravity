@@ -230,3 +230,20 @@ class StudentDashboardStats(BaseModel):
     recent_attempts: List[TestAttemptResponse]
     popular_topics: List[TopicResponse]
     active_attempt_id: Optional[int] = None  # For continuing a test
+
+# ----------------- Auth & Bulk Action Schemas -----------------
+class ForgotPasswordRequest(BaseModel):
+    email: str
+
+class ResetPasswordRequest(BaseModel):
+    email: str
+    otp: str
+    new_password: str
+
+class BulkQuestionDelete(BaseModel):
+    question_ids: Optional[List[int]] = None
+
+class BulkQuestionUpdateMarks(BaseModel):
+    question_ids: Optional[List[int]] = None
+    marks: float = Field(..., gt=0)
+

@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../../services/api';
-import { Layers, Plus, Edit3, Trash2, X, Check, Save } from 'lucide-react';
+import { Layers, Plus, Edit3, Trash2, X, Check, Save, BookOpen, Clock, Award, ChevronDown, ChevronUp, FileText } from 'lucide-react';
 import Swal from 'sweetalert2';
 
 const TopicManagement = () => {
   const [topics, setTopics] = useState([]);
+  const [tests, setTests] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [expandedTopicId, setExpandedTopicId] = useState(null);
   
   // Form states
   const [topicName, setTopicName] = useState('');
@@ -17,8 +20,12 @@ const TopicManagement = () => {
 
   const fetchTopics = async () => {
     try {
-      const res = await api.get('/api/admin/topics');
-      setTopics(res.data);
+      const [topicsRes, testsRes] = await Promise.all([
+        api.get('/api/admin/topics'),
+        api.get('/api/admin/tests')
+      ]);
+      setTopics(topicsRes.data);
+      setTests(testsRes.data);
     } catch (err) {
       console.error("Failed to fetch topics:", err);
     } finally {
@@ -194,34 +201,107 @@ const TopicManagement = () => {
               </div>
             ) : topics.length > 0 ? (
               <div className="grid grid-cols-1 gap-4">
-                {topics.map((t) => (
-                  <div 
-                    key={t.id}
-                    className="p-5 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/50 dark:border-slate-700/50 shadow-sm flex items-start justify-between gap-4"
-                  >
-                    <div>
-                      <h4 className="font-extrabold text-slate-900 dark:text-white text-base">{t.name}</h4>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed">{t.description || "No description provided."}</p>
+                {topics.map((t) => {
+                  const relatedTests = tests.filter(test => test.topic_id === t.id);
+                  const isExpanded = expandedTopicId === t.id;
+
+                  return (
+                    <div 
+                      key={t.id}
+                      className="p-5 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/50 dark:border-slate-700/50 shadow-sm transition-all"
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div 
+                          className="cursor-pointer flex-1"
+                          onClick={() => setExpandedTopicId(isExpanded ? null : t.id)}
+                        >
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-extrabold text-slate-900 dark:text-white text-base">{t.name}</h4>
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400">
+                              <BookOpen className="h-3 w-3 mr-1" /> {relatedTests.length} {relatedTests.length === 1 ? 'Test' : 'Tests'}
+                            </span>
+                            {isExpanded ? <ChevronUp className="h-4 w-4 text-slate-400" /> : <ChevronDown className="h-4 w-4 text-slate-400" />}
+                          </div>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed">{t.description || "No description provided."}</p>
+                        </div>
+                        
+                        <div className="flex items-center space-x-2 shrink-0">
+                          <button
+                            onClick={() => handleEditClick(t)}
+                            className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-650 text-slate-600 dark:text-slate-350 transition-colors"
+                            title="Edit Topic"
+                          >
+                            <Edit3 className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteTopic(t.id)}
+                            className="p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 transition-colors"
+                            title="Delete Topic"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Expanded Related Mock Tests Section */}
+                      {isExpanded && (
+                        <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700/50 space-y-3 animate-fade-in">
+                          <h5 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center">
+                            Related Mock Tests for "{t.name}"
+                          </h5>
+                          {relatedTests.length > 0 ? (
+                            <div className="space-y-2">
+                              {relatedTests.map((test) => (
+                                <div 
+                                  key={test.id} 
+                                  className="p-3 bg-slate-50 dark:bg-slate-750/50 rounded-xl border border-slate-200/50 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                                >
+                                  <div>
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-bold text-sm text-slate-900 dark:text-white">{test.title}</span>
+                                      <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${
+                                        test.status === 'published' 
+                                          ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' 
+                                          : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
+                                      }`}>
+                                        {test.status}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-4 text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                                      <span className="flex items-center"><Clock className="h-3 w-3 mr-1" /> {test.duration_minutes}m</span>
+                                      <span className="flex items-center"><BookOpen className="h-3 w-3 mr-1" /> {test.question_count} Qs</span>
+                                      <span className="flex items-center"><Award className="h-3 w-3 mr-1" /> {test.total_marks} Marks</span>
+                                    </div>
+                                  </div>
+
+                                  <div className="flex items-center gap-2 self-end sm:self-center">
+                                    <Link 
+                                      to={`/admin/tests?edit=${test.id}`} 
+                                      className="px-3 py-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 font-bold text-xs rounded-lg flex items-center transition-colors"
+                                    >
+                                      <Edit3 className="h-3.5 w-3.5 mr-1" /> Edit Test
+                                    </Link>
+                                    <Link 
+                                      to={`/admin/tests/${test.id}/questions`} 
+                                      className="px-3 py-1.5 bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs rounded-lg flex items-center transition-colors shadow-sm"
+                                    >
+                                      Questions
+                                    </Link>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="p-4 text-center bg-slate-50 dark:bg-slate-750/30 rounded-xl text-xs text-slate-500 dark:text-slate-400 italic">
+                              No mock tests created under this topic yet.
+                            </div>
+                          )}
+                        </div>
+                      )}
+
                     </div>
-                    
-                    <div className="flex items-center space-x-2 shrink-0">
-                      <button
-                        onClick={() => handleEditClick(t)}
-                        className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-650 text-slate-600 dark:text-slate-350 transition-colors"
-                        title="Edit Topic"
-                      >
-                        <Edit3 className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteTopic(t.id)}
-                        className="p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 transition-colors"
-                        title="Delete Topic"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <div className="p-8 text-center bg-white dark:bg-slate-800 rounded-3xl border border-dashed border-slate-200 dark:border-slate-700">

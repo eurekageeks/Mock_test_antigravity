@@ -8,7 +8,11 @@ class Settings:
     PROJECT_NAME: str = "A1tiExam Mock Test Platform"
     
     # Database
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./a1tiexam.db")
+    _raw_db_url: str = os.getenv("DATABASE_URL", "sqlite:///./a1tiexam.db")
+    if _raw_db_url.startswith("sqlite:////app/") and not os.path.exists("/app"):
+        DATABASE_URL: str = "sqlite:///./a1tiexam.db"
+    else:
+        DATABASE_URL: str = _raw_db_url
     
     # JWT Auth
     JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY", "a1ti_exam_platform_secret_key_2026_super_secure_key")

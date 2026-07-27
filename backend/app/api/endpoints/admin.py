@@ -11,7 +11,8 @@ from app.models.models import (
 from app.schemas.schemas import (
     AdminDashboardStats, UserResponse, StudentStatusUpdate, TestAttemptResponse,
     TopicCreate, TopicResponse, MockTestCreate, MockTestResponse,
-    QuestionCreate, QuestionResponse, QuestionReorder
+    QuestionCreate, QuestionResponse, QuestionReorder,
+    BulkQuestionDelete, BulkQuestionUpdateMarks
 )
 from app.api.deps import get_admin_user
 
@@ -355,6 +356,35 @@ def delete_question(
     db.delete(question)
     db.commit()
     return {"detail": "Question deleted successfully."}
+
+@router.post("/tests/{test_id}/questions/bulk-delete")
+def bulk_delete_questions(
+    test_id: int,
+    req: BulkQuestionDelete,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_admin_user)
+):
+    query = db.query(Question).filter(Question.mock_test_id == test_id)
+    if req.question_ids:
+        query = query.filter(Question.id.in_(req.question_ids))
+    deleted_count = query.delete(synchronize_session=False)
+    db.commit()
+    return {"detail": f"{deleted_count} question(s) deleted successfully."}
+
+@router.post("/tests/{test_id}/questions/bulk-update-marks")
+def bulk_update_question_marks(
+    test_id: int,
+    req: BulkQuestionUpdateMarks,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_admin_user)
+):
+    query = db.query(Question).filter(Question.mock_test_id == test_id)
+    if req.question_ids:
+        query = query.filter(Question.id.in_(req.question_ids))
+    updated_count = query.update({"marks": req.marks}, synchronize_session=False)
+    db.commit()
+    return {"detail": f"{updated_count} question(s) updated to {req.marks} marks successfully."}
+
 
 @router.post("/questions/{question_id}/duplicate", response_model=QuestionResponse)
 def duplicate_question(

@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import api from '../../services/api';
 import { 
   FileText, Plus, Edit3, Trash2, BookOpen, Clock, 
-  Award, ShieldAlert, Check, X, Eye, HelpCircle, Save 
+  Award, ShieldAlert, Check, X, Eye, HelpCircle, Save, Search 
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 
 const MockTestManagement = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [tests, setTests] = useState([]);
   const [topics, setTopics] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
   
   // Modal / Form trigger states
   const [showFormModal, setShowFormModal] = useState(false);
@@ -77,6 +79,19 @@ const MockTestManagement = () => {
     setStatus(test.status);
     setShowFormModal(true);
   };
+
+  useEffect(() => {
+    if (tests.length > 0) {
+      const editId = searchParams.get('edit');
+      if (editId) {
+        const testToEdit = tests.find(t => t.id.toString() === editId.toString());
+        if (testToEdit) {
+          openEditModal(testToEdit);
+          setSearchParams({});
+        }
+      }
+    }
+  }, [tests, searchParams]);
 
   const handleCreateOrUpdateTest = async (e) => {
     e.preventDefault();
@@ -177,104 +192,130 @@ const MockTestManagement = () => {
           </div>
         )}
 
+        {/* Search Bar */}
+        <div className="relative max-w-md">
+          <span className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+            <Search className="h-5 w-5" />
+          </span>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search mock tests by title or topic..."
+            className="w-full pl-11 pr-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all dark:text-white"
+          />
+        </div>
+
         {/* Catalog list */}
         {loading ? (
           <div className="h-40 flex items-center justify-center">
             <div className="h-8 w-8 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
           </div>
-        ) : tests.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {tests.map((test) => (
-              <div 
-                key={test.id} 
-                className="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-200/60 dark:border-slate-800 hover:border-brand-500/30 dark:hover:border-brand-500/30 shadow-sm hover:shadow-lg transition-all duration-350 flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="inline-block px-3 py-1 rounded-xl text-xs font-semibold bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400">
-                      {test.topic_name || "General"}
-                    </span>
-                    <span className={`inline-flex px-2 py-0.5 rounded text-[9px] font-black uppercase ${
-                      test.status === 'published' 
-                        ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' 
-                        : 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-350'
-                    }`}>
-                      {test.status}
-                    </span>
-                  </div>
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2 line-clamp-1">{test.title}</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-4 line-clamp-2">{test.description}</p>
-                </div>
-                <div>
-                  <div className="flex items-center justify-between text-[11px] font-semibold text-slate-400 mb-4 border-t border-slate-100 dark:border-slate-700/50 pt-4">
-                    <span className="flex items-center"><Clock className="h-4 w-4 mr-1 text-slate-400" /> {test.duration_minutes} Min</span>
-                    <span className="flex items-center"><BookOpen className="h-4 w-4 mr-1 text-slate-400" /> {test.question_count} Qs</span>
-                    <span className="flex items-center"><Award className="h-4 w-4 mr-1 text-slate-400" /> {test.total_marks} Marks</span>
-                  </div>
-                  
-                  {/* Action row controls */}
-                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100 dark:border-slate-750/30">
-                    <Link
-                      to={`/admin/tests/${test.id}/questions`}
-                      className="w-full inline-flex items-center justify-center py-2.5 px-3 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl text-xs transition-colors"
-                    >
-                      Questions
-                    </Link>
-                    
-                    <div className="flex items-center space-x-1.5 justify-end">
-                      <button
-                        onClick={() => setShowPreviewModal(test)}
-                        className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-650 text-slate-600 dark:text-slate-300 transition-colors"
-                        title="Preview instructions"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </button>
+        ) : (
+          (() => {
+            const filteredTests = tests.filter(t => 
+              t.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+              (t.topic_name && t.topic_name.toLowerCase().includes(searchQuery.toLowerCase()))
+            );
+            return filteredTests.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {filteredTests.map((test) => (
+                  <div 
+                    key={test.id} 
+                    className="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-200/60 dark:border-slate-800 hover:border-brand-500/30 dark:hover:border-brand-500/30 shadow-sm hover:shadow-lg transition-all duration-350 flex flex-col justify-between"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-4">
+                        <span className="inline-block px-3 py-1 rounded-xl text-xs font-semibold bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400">
+                          {test.topic_name || "General"}
+                        </span>
+                        <span className={`inline-flex px-2 py-0.5 rounded text-[9px] font-black uppercase ${
+                          test.status === 'published' 
+                            ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' 
+                            : 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-350'
+                        }`}>
+                          {test.status}
+                        </span>
+                      </div>
+                      <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2 line-clamp-1">{test.title}</h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mb-4 line-clamp-2">{test.description}</p>
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between text-[11px] font-semibold text-slate-400 mb-4 border-t border-slate-100 dark:border-slate-700/50 pt-4">
+                        <span className="flex items-center"><Clock className="h-4 w-4 mr-1 text-slate-400" /> {test.duration_minutes} Min</span>
+                        <span className="flex items-center"><BookOpen className="h-4 w-4 mr-1 text-slate-400" /> {test.question_count} Qs</span>
+                        <span className="flex items-center"><Award className="h-4 w-4 mr-1 text-slate-400" /> {test.total_marks} Marks</span>
+                      </div>
                       
-                      <button
-                        onClick={() => handleTogglePublish(test)}
-                        className={`p-2 rounded-xl border transition-colors ${
-                          test.status === 'published'
-                            ? 'bg-rose-500/10 border-rose-500/20 text-rose-500'
-                            : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'
-                        }`}
-                        title={test.status === 'published' ? 'Unpublish Test' : 'Publish Test'}
-                      >
-                        {test.status === 'published' ? <X className="h-4 w-4" /> : <Check className="h-4 w-4" />}
-                      </button>
+                      {/* Action row controls */}
+                      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100 dark:border-slate-750/30">
+                        <Link
+                          to={`/admin/tests/${test.id}/questions`}
+                          className="w-full inline-flex items-center justify-center py-2.5 px-3 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl text-xs transition-colors"
+                        >
+                          Questions
+                        </Link>
+                        
+                        <div className="flex items-center space-x-1.5 justify-end">
+                          <button
+                            onClick={() => setShowPreviewModal(test)}
+                            className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-650 text-slate-600 dark:text-slate-300 transition-colors"
+                            title="Preview instructions"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </button>
+                          
+                          <button
+                            onClick={() => handleTogglePublish(test)}
+                            className={`p-2 rounded-xl border transition-colors ${
+                              test.status === 'published'
+                                ? 'bg-rose-500/10 border-rose-500/20 text-rose-500'
+                                : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'
+                            }`}
+                            title={test.status === 'published' ? 'Unpublish Test' : 'Publish Test'}
+                          >
+                            {test.status === 'published' ? <X className="h-4 w-4" /> : <Check className="h-4 w-4" />}
+                          </button>
 
-                      <button
-                        onClick={() => openEditModal(test)}
-                        className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-650 text-slate-600 dark:text-slate-300 transition-colors"
-                        title="Edit test options"
-                      >
-                        <Edit3 className="h-4 w-4" />
-                      </button>
+                          <button
+                            onClick={() => openEditModal(test)}
+                            className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-650 text-slate-600 dark:text-slate-300 transition-colors"
+                            title="Edit test options"
+                          >
+                            <Edit3 className="h-4 w-4" />
+                          </button>
 
-                      <button
-                        onClick={() => handleDeleteTest(test.id)}
-                        className="p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 transition-colors"
-                        title="Delete mock test"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                          <button
+                            onClick={() => handleDeleteTest(test.id)}
+                            className="p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 transition-colors"
+                            title="Delete mock test"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
+                ))}
               </div>
-            ))}
-          </div>
-        ) : (
-          <div className="p-12 text-center bg-white dark:bg-slate-800 rounded-[32px] border border-dashed border-slate-200 dark:border-slate-700 max-w-md mx-auto">
-            <BookOpen className="h-12 w-12 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">No Tests Configured</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed mb-6">Create your first mock test exam details using the button in top right.</p>
-            <button
-              onClick={openCreateModal}
-              className="px-5 py-2.5 bg-brand-600 text-white font-bold rounded-xl text-xs shadow-md"
-            >
-              Add Mock Test
-            </button>
-          </div>
+            ) : (
+              <div className="p-12 text-center bg-white dark:bg-slate-800 rounded-[32px] border border-dashed border-slate-200 dark:border-slate-700 max-w-md mx-auto">
+                <BookOpen className="h-12 w-12 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">No Tests Configured</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed mb-6">
+                  {searchQuery ? "No tests matched your search criteria." : "Create your first mock test exam details using the button in top right."}
+                </p>
+                {!searchQuery && (
+                  <button
+                    onClick={openCreateModal}
+                    className="px-5 py-2.5 bg-brand-600 text-white font-bold rounded-xl text-xs shadow-md"
+                  >
+                    Add Mock Test
+                  </button>
+                )}
+              </div>
+            );
+          })()
         )}
 
       </div>

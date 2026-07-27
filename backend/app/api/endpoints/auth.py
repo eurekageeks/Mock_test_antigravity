@@ -3,8 +3,11 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.security import verify_password, get_password_hash, create_access_token
 from app.models.models import User, StudentProfile
-from app.schemas.schemas import UserCreate, UserLogin, Token, UserResponse
+from app.schemas.schemas import UserCreate, UserLogin, Token, UserResponse, ForgotPasswordRequest, ResetPasswordRequest
 from app.api.deps import get_current_active_user
+import random
+
+reset_otps = {}
 
 router = APIRouter()
 
@@ -49,7 +52,8 @@ def register_student(user_in: UserCreate, db: Session = Depends(get_db)):
 @router.post("/login", response_model=Token)
 def login(user_in: UserLogin, db: Session = Depends(get_db)):
     # Fetch user
-    user = db.query(User).filter(User.email == user_in.email).first()
+    clean_email = user_in.email.strip()
+    user = db.query(User).filter(User.email.ilike(clean_email)).first()
     if not user or not verify_password(user_in.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -80,3 +84,40 @@ def login(user_in: UserLogin, db: Session = Depends(get_db)):
 @router.get("/me", response_model=UserResponse)
 def get_me(current_user: User = Depends(get_current_active_user)):
     return current_user
+
+@router.post("/forgot-password")
+def forgot_password(req: ForgotPasswordRequest, db: Session = Depends(get_db)):
+    clean_email = req.email.strip()
+    user = db.query(User).filter(User.email.ilike(clean_email)).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No account found associated with this email address."
+        )
+    otp = f"{random.randint(100000, 999999)}"
+    reset_otps[clean_email.lower()] = otp
+    return {
+        "message": "Verification code generated successfully.",
+        "otp": otp
+    }
+
+@router.post("/reset-password")
+def reset_password(req: ResetPasswordRequest, db: Session = Depends(get_db)):
+    clean_email = req.email.strip().lower()
+    clean_otp = req.otp.strip()
+    if clean_email not in reset_otps or reset_otps[clean_email] != clean_otp:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired verification code."
+        )
+    user = db.query(User).filter(User.email.ilike(clean_email)).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found."
+        )
+    user.password_hash = get_password_hash(req.new_password)
+    db.commit()
+    reset_otps.pop(clean_email, None)
+    return {"message": "Password reset successfully. You can now login with your new password."}
+
