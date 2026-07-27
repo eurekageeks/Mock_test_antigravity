@@ -21,8 +21,39 @@ jobs:
           password: ${{ secrets.PASSWORD }}
           port: ${{ secrets.PORT }}
           script: |
-            cd /root/Mock_test_antigravity
-            git pull origin main
+            set -e
+
+            PROJECT_DIR=/root/Mock_test_antigravity
+            BACKUP_DIR=/root/backups
+            DB_DIR=/root/data/a1tiexamprism
+            TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+
+            mkdir -p $BACKUP_DIR/database
+            mkdir -p $BACKUP_DIR/project
+
+            cd $PROJECT_DIR
+
+            echo "Updating source code..."
+            git fetch origin
+            git reset --hard origin/main
+
+            echo "Creating database backup..."
+            if [ -f "$DB_DIR/a1tiexam.db" ]; then
+              cp "$DB_DIR/a1tiexam.db" \
+                 "$BACKUP_DIR/database/a1tiexam_${TIMESTAMP}.db"
+            fi
+
+            echo "Creating project backup..."
+            tar --exclude=.git \
+                -czf "$BACKUP_DIR/project/project_${TIMESTAMP}.tar.gz" .
+
+            echo "Stopping containers..."
             docker compose down
+
+            echo "Building latest version..."
             docker compose up -d --build
+
+            echo "Cleaning unused Docker images..."
             docker image prune -f
+
+            echo "Deployment completed successfully."
