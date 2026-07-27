@@ -18,23 +18,22 @@ const StudentDashboard = () => {
   // Skills Modal state
   const [showSkillsModal, setShowSkillsModal] = useState(false);
   const [selectedSkills, setSelectedSkills] = useState([]);
-  
-  // Available skills to choose from
-  const availableSkillsList = [
-    "Python", "Java", "AWS", "Docker", "Kubernetes", 
-    "DevOps", "Linux", "Networking", "React", "FastAPI", "MySQL", "Git"
-  ];
+  const [availableSkillsList, setAvailableSkillsList] = useState([]);
 
   // One-time initialization: load stats, tests, and pre-populate skills
   const initializeDashboard = async () => {
     try {
-      const [statsRes, testsRes, profileRes] = await Promise.all([
+      const [statsRes, testsRes, profileRes, topicsRes] = await Promise.all([
         api.get('/api/student/dashboard'),
         api.get('/api/student/tests'),
-        api.get('/api/student/profile')
+        api.get('/api/student/profile'),
+        api.get('/api/student/topics')
       ]);
       setStats(statsRes.data);
       setTests(testsRes.data);
+      if (topicsRes?.data) {
+        setAvailableSkillsList(topicsRes.data.map(t => t.name));
+      }
 
       // Pre-populate modal with current skills
       if (profileRes.data && profileRes.data.skills) {
