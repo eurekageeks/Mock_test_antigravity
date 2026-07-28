@@ -2,7 +2,7 @@ from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.database import engine, Base, SessionLocal
-from app.api.endpoints import auth, student, admin
+from app.api.endpoints import auth, student, admin, backup
 from app.seed import seed_data
 
 # Initialize the database tables on startup
@@ -34,6 +34,7 @@ app.add_middleware(
 app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(student.router, prefix="/api/student", tags=["Student Panel"])
 app.include_router(admin.router, prefix="/api/admin", tags=["Admin Panel"])
+app.include_router(backup.router, prefix="/api/admin/backup", tags=["Admin Backup & Restore"])
 
 @app.get("/")
 def read_root():

@@ -1,14 +1,14 @@
 import axios from 'axios';
 
-const getDefaultBaseUrl = () => {
+const getBaseUrl = () => {
   if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
-    return 'http://localhost:8000';
+    return import.meta.env.VITE_DEV_API_URL || 'http://localhost:8000';
   }
-  return 'https://examprism.a1training.in';
+  return import.meta.env.VITE_API_URL || 'https://examprism.a1training.in';
 };
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || getDefaultBaseUrl(),
+  baseURL: getBaseUrl(),
   headers: {
     'Content-Type': 'application/json',
   },

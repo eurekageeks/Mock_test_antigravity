@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import AdminLayout from './components/AdminLayout';
 
 // Public Pages
 import LandingPage from './pages/LandingPage';
@@ -24,6 +25,7 @@ import StudentManagement from './pages/admin/StudentManagement';
 import TopicManagement from './pages/admin/TopicManagement';
 import MockTestManagement from './pages/admin/MockTestManagement';
 import QuestionManagement from './pages/admin/QuestionManagement';
+import BackupManagement from './pages/admin/BackupManagement';
 
 // Route Guard Components
 const RequireAuth = ({ children, requiredRole }) => {
@@ -161,31 +163,37 @@ const AppRoutes = () => {
       {/* ─── Admin Routes ─── */}
       <Route path="/admin/dashboard" element={
         <RequireAuth requiredRole="admin">
-          <WithNavbarOnly><AdminDashboard /></WithNavbarOnly>
+          <AdminLayout><AdminDashboard /></AdminLayout>
         </RequireAuth>
       } />
 
       <Route path="/admin/students" element={
         <RequireAuth requiredRole="admin">
-          <WithNavbarOnly><StudentManagement /></WithNavbarOnly>
+          <AdminLayout><StudentManagement /></AdminLayout>
         </RequireAuth>
       } />
 
       <Route path="/admin/topics" element={
         <RequireAuth requiredRole="admin">
-          <WithNavbarOnly><TopicManagement /></WithNavbarOnly>
+          <AdminLayout><TopicManagement /></AdminLayout>
         </RequireAuth>
       } />
 
       <Route path="/admin/tests" element={
         <RequireAuth requiredRole="admin">
-          <WithNavbarOnly><MockTestManagement /></WithNavbarOnly>
+          <AdminLayout><MockTestManagement /></AdminLayout>
         </RequireAuth>
       } />
 
       <Route path="/admin/tests/:test_id/questions" element={
         <RequireAuth requiredRole="admin">
-          <WithNavbarOnly><QuestionManagement /></WithNavbarOnly>
+          <AdminLayout><QuestionManagement /></AdminLayout>
+        </RequireAuth>
+      } />
+
+      <Route path="/admin/backup" element={
+        <RequireAuth requiredRole="admin">
+          <AdminLayout><BackupManagement /></AdminLayout>
         </RequireAuth>
       } />
 
