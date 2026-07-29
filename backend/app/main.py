@@ -10,6 +10,18 @@ from app.seed import seed_data
 # Initialize the database tables on startup
 Base.metadata.create_all(bind=engine)
 
+# Auto-migration for existing databases
+try:
+    with engine.connect() as conn:
+        from sqlalchemy import text
+        result = conn.execute(text("PRAGMA table_info(questions);")).fetchall()
+        columns = [row[1] for row in result]
+        if "image_urls" not in columns:
+            conn.execute(text("ALTER TABLE questions ADD COLUMN image_urls JSON;"))
+            conn.commit()
+except Exception as e:
+    print(f"Auto-migration error: {e}")
+
 # Run seeding
 db = SessionLocal()
 try:
