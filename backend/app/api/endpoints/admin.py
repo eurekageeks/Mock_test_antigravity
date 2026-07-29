@@ -288,10 +288,11 @@ def delete_topic(topic_id: int, db: Session = Depends(get_db), current_user: Use
 # ----------------- Mock Test CRUD -----------------
 @router.get("/tests", response_model=List[MockTestResponse])
 def get_tests(db: Session = Depends(get_db), current_user: User = Depends(get_admin_user)):
-    tests = db.query(MockTest).all()
+    tests = db.query(MockTest).order_by(MockTest.id.desc()).all()
     for test in tests:
         test.topic_name = test.topic.name
         test.question_count = len(test.questions)
+        test.has_subjective = any(q.type == 'text' for q in test.questions)
     return tests
 
 @router.post("/tests", response_model=MockTestResponse)
@@ -392,6 +393,16 @@ def unpublish_test(test_id: int, db: Session = Depends(get_db), current_user: Us
     return test
 
 # ----------------- Question Management -----------------
+def _update_test_marks_if_auto(test_id: int, db: Session):
+    test = db.query(MockTest).filter(MockTest.id == test_id).first()
+    if not test or not test.auto_calculate_marks:
+        return
+        
+    total_marks = sum(q.marks for q in test.questions)
+    test.total_marks = total_marks
+    test.passing_marks = total_marks * 0.5
+    db.commit()
+
 @router.get("/tests/{test_id}/questions", response_model=List[QuestionResponse])
 def get_test_questions(
     test_id: int,
@@ -441,6 +452,7 @@ def add_question(
         db.commit()
         db.refresh(question)
         
+    _update_test_marks_if_auto(test_id, db)
     return question
 
 @router.put("/questions/{question_id}", response_model=QuestionResponse)
@@ -479,6 +491,7 @@ def update_question(
         
     db.commit()
     db.refresh(question)
+    _update_test_marks_if_auto(question.mock_test_id, db)
     return question
 
 @router.delete("/questions/{question_id}")
@@ -493,6 +506,7 @@ def delete_question(
         
     db.delete(question)
     db.commit()
+    _update_test_marks_if_auto(test_id, db)
     return {"detail": "Question deleted successfully."}
 
 @router.post("/tests/{test_id}/questions/bulk-delete")
@@ -507,6 +521,7 @@ def bulk_delete_questions(
         query = query.filter(Question.id.in_(req.question_ids))
     deleted_count = query.delete(synchronize_session=False)
     db.commit()
+    _update_test_marks_if_auto(test_id, db)
     return {"detail": f"{deleted_count} question(s) deleted successfully."}
 
 @router.post("/tests/{test_id}/questions/bulk-update-marks")
@@ -521,6 +536,7 @@ def bulk_update_question_marks(
         query = query.filter(Question.id.in_(req.question_ids))
     updated_count = query.update({"marks": req.marks}, synchronize_session=False)
     db.commit()
+    _update_test_marks_if_auto(test_id, db)
     return {"detail": f"{updated_count} question(s) updated to {req.marks} marks successfully."}
 
 
@@ -563,6 +579,7 @@ def duplicate_question(
         db.commit()
         db.refresh(dup_q)
         
+    _update_test_marks_if_auto(dup_q.mock_test_id, db)
     return dup_q
 
 @router.post("/tests/{test_id}/questions/reorder")
@@ -742,6 +759,8 @@ async def upload_pdf_questions(
             "options_count": len(options)
         })
 
+    _update_test_marks_if_auto(test_id, db)
+    
     return {
         "detail": f"Successfully imported {len(created_questions)} question(s) from PDF.",
         "imported_count": len(created_questions),

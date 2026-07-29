@@ -28,6 +28,7 @@ const MockTestManagement = () => {
   const [totalMarks, setTotalMarks] = useState(30.0);
   const [instructions, setInstructions] = useState('');
   const [status, setStatus] = useState('draft');
+  const [autoCalculateMarks, setAutoCalculateMarks] = useState(true);
 
   const [message, setMessage] = useState({ text: '', type: '' });
   const [submitting, setSubmitting] = useState(false);
@@ -63,6 +64,7 @@ const MockTestManagement = () => {
     setTotalMarks(30);
     setInstructions('');
     setStatus('draft');
+    setAutoCalculateMarks(true);
     if (topics.length > 0) setTopicId(topics[0].id.toString());
     setShowFormModal(true);
   };
@@ -77,6 +79,7 @@ const MockTestManagement = () => {
     setTotalMarks(test.total_marks);
     setInstructions(test.instructions || '');
     setStatus(test.status);
+    setAutoCalculateMarks(test.auto_calculate_marks !== false);
     setShowFormModal(true);
   };
 
@@ -106,7 +109,8 @@ const MockTestManagement = () => {
       passing_marks: parseFloat(passingMarks),
       total_marks: parseFloat(totalMarks),
       instructions,
-      status
+      status,
+      auto_calculate_marks: autoCalculateMarks
     };
 
     try {
@@ -235,6 +239,13 @@ const MockTestManagement = () => {
                             : 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-350'
                         }`}>
                           {test.status}
+                        </span>
+                        <span className={`inline-flex px-2 py-0.5 rounded text-[9px] font-black uppercase ${
+                          test.has_subjective 
+                            ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400' 
+                            : 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                        }`}>
+                          {test.has_subjective ? 'SUBJECTIVE' : 'OBJECTIVE'}
                         </span>
                       </div>
                       <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2 line-clamp-1">{test.title}</h3>
@@ -389,27 +400,45 @@ const MockTestManagement = () => {
                   />
                 </div>
 
-                <div>
+                <div className="relative">
                   <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Total Marks</label>
                   <input
                     type="number"
                     required
+                    disabled={autoCalculateMarks}
                     value={totalMarks}
                     onChange={(e) => setTotalMarks(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-355 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm dark:text-white font-medium"
+                    className={`w-full px-4 py-3 rounded-xl border border-slate-355 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm dark:text-white font-medium ${autoCalculateMarks ? 'opacity-50 cursor-not-allowed' : ''}`}
                   />
+                  {autoCalculateMarks && <span className="absolute top-2 right-2 text-[10px] text-brand-500 font-bold bg-brand-50 dark:bg-brand-900/30 px-2 py-1 rounded">AUTO</span>}
                 </div>
 
-                <div>
+                <div className="relative">
                   <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Passing Marks</label>
                   <input
                     type="number"
                     required
+                    disabled={autoCalculateMarks}
                     value={passingMarks}
                     onChange={(e) => setPassingMarks(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-355 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm dark:text-white font-medium"
+                    className={`w-full px-4 py-3 rounded-xl border border-slate-355 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm dark:text-white font-medium ${autoCalculateMarks ? 'opacity-50 cursor-not-allowed' : ''}`}
                   />
+                  {autoCalculateMarks && <span className="absolute top-2 right-2 text-[10px] text-brand-500 font-bold bg-brand-50 dark:bg-brand-900/30 px-2 py-1 rounded">AUTO</span>}
                 </div>
+              </div>
+
+              <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200/50 dark:border-slate-700/50">
+                <input
+                  type="checkbox"
+                  id="autoCalculateMarks"
+                  checked={autoCalculateMarks}
+                  onChange={(e) => setAutoCalculateMarks(e.target.checked)}
+                  className="rounded border-slate-300 text-brand-600 focus:ring-brand-500 bg-white dark:bg-slate-800 h-4 w-4 cursor-pointer"
+                />
+                <label htmlFor="autoCalculateMarks" className="text-sm font-bold text-slate-700 dark:text-slate-300 cursor-pointer select-none">
+                  Auto-calculate marks from questions
+                  <p className="text-xs font-normal text-slate-500 dark:text-slate-400 mt-0.5">Total and passing marks will update automatically as you add/edit questions.</p>
+                </label>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">

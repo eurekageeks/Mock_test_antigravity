@@ -179,7 +179,7 @@ def list_student_tests(
     if search:
         query = query.filter(MockTest.title.ilike(f"%{search}%"))
 
-    tests = query.all()
+    tests = query.order_by(MockTest.id.desc()).all()
 
     # Compute student skill names — strip and lowercase for case-insensitive matching
     skill_names = set()
@@ -193,6 +193,7 @@ def list_student_tests(
     for test in tests:
         test.topic_name = test.topic.name
         test.question_count = len(test.questions)
+        test.has_subjective = any(q.type == 'text' for q in test.questions)
         # Strip and lowercase both sides for case-insensitive match
         test.is_recommended = (test.topic.name.strip().lower() in skill_names) if skill_names else False
         if test.is_recommended:
@@ -367,6 +368,7 @@ def get_active_attempt_details(
                 question_text=q.question_text,
                 marks=q.marks,
                 order_index=q.order_index,
+                image_urls=q.image_urls,
                 options=[StudentQuestionOption(
                     id=opt.id,
                     option_key=opt.option_key,

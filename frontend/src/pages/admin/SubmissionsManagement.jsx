@@ -597,7 +597,7 @@ const SubmissionsManagement = () => {
                               {ans.image_urls && ans.image_urls.length > 0 && (
                                 <div className="mb-4 flex flex-wrap gap-3">
                                   {ans.image_urls.map((url, idx) => (
-                                    <img key={idx} src={`http://localhost:8000${url}`} alt={`Q Image ${idx+1}`} className="max-w-xs rounded-xl shadow-sm border border-slate-200 dark:border-slate-700" />
+                                    <img key={idx} src={`${api.defaults.baseURL}${url}`} alt={`Q Image ${idx+1}`} className="max-w-xs rounded-xl shadow-sm border border-slate-200 dark:border-slate-700" />
                                   ))}
                                 </div>
                               )}

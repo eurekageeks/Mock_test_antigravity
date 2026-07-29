@@ -114,10 +114,11 @@ class MockTestCreate(BaseModel):
     title: str = Field(..., min_length=2, max_length=255)
     description: Optional[str] = None
     duration_minutes: int = Field(..., gt=0)
-    passing_marks: float = Field(..., gt=0)
-    total_marks: float = Field(..., gt=0)
+    passing_marks: float = Field(0, ge=0)
+    total_marks: float = Field(0, ge=0)
     instructions: Optional[str] = None
     status: str = "draft"  # 'draft', 'published'
+    auto_calculate_marks: bool = True
 
 class MockTestResponse(BaseSchema):
     id: int
@@ -133,6 +134,8 @@ class MockTestResponse(BaseSchema):
     created_at: datetime
     question_count: Optional[int] = 0
     is_recommended: Optional[bool] = False
+    auto_calculate_marks: bool = True
+    has_subjective: Optional[bool] = False
 
 # ----------------- Student-facing Secure Test Attempt Schemas -----------------
 class StudentQuestionOption(BaseSchema):
@@ -146,6 +149,7 @@ class StudentQuestion(BaseSchema):
     question_text: str
     marks: float
     order_index: int
+    image_urls: Optional[List[str]] = None
     options: List[StudentQuestionOption] = []
     saved_answer: Optional[dict] = None  # Contains currently saved answer if student resumes
 

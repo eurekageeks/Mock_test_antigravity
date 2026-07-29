@@ -68,9 +68,18 @@ const StudentTests = () => {
         </div>
       )}
       <div className={showBadge ? 'mt-2' : ''}>
-        <span className="inline-block px-3 py-1 rounded-xl text-xs font-semibold bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400 mb-4">
-          {test.topic_name || "General"}
-        </span>
+        <div className="flex items-center space-x-2 mb-4">
+          <span className="inline-block px-3 py-1 rounded-xl text-xs font-semibold bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400">
+            {test.topic_name || "General"}
+          </span>
+          <span className={`inline-flex px-2 py-0.5 rounded text-[9px] font-black uppercase ${
+            test.has_subjective 
+              ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400' 
+              : 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
+          }`}>
+            {test.has_subjective ? 'SUBJECTIVE' : 'OBJECTIVE'}
+          </span>
+        </div>
         <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2 line-clamp-2">{test.title}</h3>
         <p className="text-xs text-slate-500 dark:text-slate-400 mb-4 line-clamp-3">{test.description}</p>
       </div>

@@ -34,6 +34,7 @@ const QuestionManagement = () => {
   const [imageUploading, setImageUploading] = useState(false);
   const imageInputRef = useRef(null);
   const [submitting, setSubmitting] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   // PDF upload states
   const fileInputRef = useRef(null);
@@ -183,8 +184,7 @@ const QuestionManagement = () => {
     setShowModal(true);
   };
 
-  const handleImageUpload = async (e) => {
-    const files = e.target.files;
+  const uploadImageFiles = async (files) => {
     if (!files || files.length === 0) return;
     const formData = new FormData();
     for (let i = 0; i < files.length; i++) {
@@ -206,6 +206,38 @@ const QuestionManagement = () => {
     }
   };
 
+  const handleImageUpload = (e) => uploadImageFiles(e.target.files);
+
+  const handleImageDragOver = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleImageDragLeave = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleImageDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const imageFiles = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+      if (imageFiles.length > 0) uploadImageFiles(imageFiles);
+    }
+  };
+
+  const handlePaste = (e) => {
+    if (e.clipboardData && e.clipboardData.items) {
+      const imageFiles = Array.from(e.clipboardData.items)
+        .filter(item => item.type.startsWith('image/'))
+        .map(item => item.getAsFile());
+      if (imageFiles.length > 0) {
+        e.preventDefault();
+        uploadImageFiles(imageFiles);
+      }
+    }
+  };
   const removeImage = (idxToRemove) => {
     setImages(prev => prev.filter((_, idx) => idx !== idxToRemove));
   };
@@ -725,8 +757,24 @@ Answer: B`}</pre>
 
       {/* CRUD Form Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white dark:bg-slate-800 w-full max-w-2xl rounded-[32px] p-8 border border-slate-200/50 dark:border-slate-700/50 shadow-2xl relative animate-scale-up">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+          <div 
+            className={`bg-white dark:bg-slate-800 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-[32px] p-8 border ${isDragging ? 'border-brand-500 ring-4 ring-brand-500/20' : 'border-slate-200/50 dark:border-slate-700/50'} shadow-2xl relative animate-scale-up transition-all`}
+            onDragOver={handleImageDragOver}
+            onDragEnter={handleImageDragOver}
+            onDragLeave={handleImageDragLeave}
+            onDrop={handleImageDrop}
+            onPaste={handlePaste}
+          >
+            {isDragging && (
+              <div className="absolute inset-0 z-50 bg-brand-500/10 backdrop-blur-sm rounded-[32px] flex items-center justify-center pointer-events-none">
+                <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-xl flex flex-col items-center animate-bounce">
+                  <Image className="h-10 w-10 text-brand-500 mb-2" />
+                  <p className="text-sm font-bold text-slate-700 dark:text-slate-300">Drop images here to upload</p>
+                </div>
+              </div>
+            )}
+
 
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-700/50 pb-4 mb-6">
               <h3 className="text-2xl font-extrabold text-slate-900 dark:text-white">
@@ -788,7 +836,7 @@ Answer: B`}</pre>
                 <div className="flex flex-wrap gap-4 mb-3">
                   {images && images.map((url, idx) => (
                     <div key={idx} className="relative group rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 w-24 h-24">
-                      <img src={`http://localhost:8000${url}`} alt={`img-${idx}`} className="w-full h-full object-cover" />
+                      <img src={`${api.defaults.baseURL}${url}`} alt={`img-${idx}`} className="w-full h-full object-cover" />
                       <button type="button" onClick={() => removeImage(idx)} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <X className="w-3 h-3" />
                       </button>

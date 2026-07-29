@@ -14,11 +14,20 @@ Base.metadata.create_all(bind=engine)
 try:
     with engine.connect() as conn:
         from sqlalchemy import text
+        
+        # Check questions table
         result = conn.execute(text("PRAGMA table_info(questions);")).fetchall()
         columns = [row[1] for row in result]
         if "image_urls" not in columns:
             conn.execute(text("ALTER TABLE questions ADD COLUMN image_urls JSON;"))
-            conn.commit()
+            
+        # Check mock_tests table
+        result_tests = conn.execute(text("PRAGMA table_info(mock_tests);")).fetchall()
+        test_columns = [row[1] for row in result_tests]
+        if "auto_calculate_marks" not in test_columns:
+            conn.execute(text("ALTER TABLE mock_tests ADD COLUMN auto_calculate_marks BOOLEAN DEFAULT 1;"))
+            
+        conn.commit()
 except Exception as e:
     print(f"Auto-migration error: {e}")
 

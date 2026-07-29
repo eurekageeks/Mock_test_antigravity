@@ -71,6 +71,7 @@ class MockTest(Base):
     total_marks = Column(Float, nullable=False)
     instructions = Column(Text, nullable=True)
     status = Column(String(50), nullable=False, default="draft")  # 'draft', 'published'
+    auto_calculate_marks = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     
     # Relationships
