@@ -90,6 +90,7 @@ class QuestionCreate(BaseModel):
     correct_answer: str
     marks: float = 1.0
     explanation: Optional[str] = None
+    image_urls: Optional[List[str]] = None
     options: Optional[List[QuestionOptionCreate]] = None
 
 class QuestionResponse(BaseSchema):
@@ -100,6 +101,7 @@ class QuestionResponse(BaseSchema):
     correct_answer: str
     marks: float
     explanation: Optional[str]
+    image_urls: Optional[List[str]] = None
     order_index: int
     options: List[QuestionOptionResponse] = []
 
@@ -189,6 +191,12 @@ class TestAttemptResponse(BaseSchema):
     status: str
     mock_test_title: Optional[str] = None
     mock_test_total_marks: Optional[float] = None
+    topic_name: Optional[str] = None
+    student_name: Optional[str] = None
+    student_email: Optional[str] = None
+    student_mobile: Optional[str] = None
+    subjective_questions_count: Optional[int] = 0
+    pending_subjective_count: Optional[int] = 0
     result: Optional[ResultResponse] = None
 
 class ReviewAnswerResponse(BaseSchema):
@@ -202,6 +210,7 @@ class ReviewAnswerResponse(BaseSchema):
     question_type: str
     correct_answer: str
     explanation: Optional[str]
+    image_urls: Optional[List[str]] = None
     marks: float
     options: List[QuestionOptionResponse] = []
 

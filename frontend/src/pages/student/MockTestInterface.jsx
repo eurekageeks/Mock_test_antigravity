@@ -234,6 +234,13 @@ const MockTestInterface = () => {
             <p className="text-base sm:text-lg font-bold leading-relaxed whitespace-pre-line text-slate-900 dark:text-white">
               {currentQuestion?.question_text}
             </p>
+            {currentQuestion?.image_urls && currentQuestion.image_urls.length > 0 && (
+              <div className="mt-4 flex flex-wrap gap-4">
+                {currentQuestion.image_urls.map((url, idx) => (
+                  <img key={idx} src={`http://localhost:8000${url}`} alt={`Question image ${idx+1}`} className="max-w-full sm:max-w-md rounded-xl shadow border border-slate-200 dark:border-slate-700" />
+                ))}
+              </div>
+            )}
           </div>
 
           {/* MCQ Options list */}

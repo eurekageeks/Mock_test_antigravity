@@ -440,8 +440,7 @@ def save_answer(
     if question.type == "mcq":
         is_correct = (ans_in.selected_option == question.correct_answer)
     elif question.type == "text":
-        if ans_in.text_answer and question.correct_answer:
-            is_correct = (ans_in.text_answer.strip().lower() == question.correct_answer.strip().lower())
+        is_correct = None  # Subjective paragraph questions are pending admin evaluation
             
     # Check if answer exists
     student_ans = db.query(StudentAnswer).filter(
@@ -552,6 +551,14 @@ def get_attempt_result(
         
     attempt.mock_test_title = attempt.mock_test.title
     attempt.mock_test_total_marks = attempt.mock_test.total_marks
+    
+    # Calculate pending subjective questions
+    pending_subj = db.query(StudentAnswer).join(Question).filter(
+        StudentAnswer.test_attempt_id == attempt.id,
+        Question.type == 'text',
+        StudentAnswer.is_correct == None
+    ).count()
+    attempt.pending_subjective_count = pending_subj
     return {
         "attempt": attempt,
         "answers": review_answers
@@ -566,6 +573,23 @@ def get_student_attempts(db: Session = Depends(get_db), current_user: User = Dep
     for attempt in attempts:
         attempt.mock_test_title = attempt.mock_test.title
         attempt.mock_test_total_marks = attempt.mock_test.total_marks
+        
+        subj_count = db.query(Question).filter(
+            Question.mock_test_id == attempt.mock_test_id,
+            Question.type == 'text'
+        ).count()
+        
+        pending_subj = 0
+        if subj_count > 0:
+            pending_subj = db.query(StudentAnswer).join(Question).filter(
+                StudentAnswer.test_attempt_id == attempt.id,
+                Question.type == 'text',
+                StudentAnswer.is_correct == None
+            ).count()
+            
+        attempt.subjective_questions_count = subj_count
+        attempt.pending_subjective_count = pending_subj
+        
     return attempts
 
 # ----------------- Helper functions -----------------
@@ -598,11 +622,12 @@ def submit_attempt_internal(attempt_id: int, db: Session) -> Result:
         
         # If student did not answer, count as wrong with zero marks
         if student_ans:
-            if student_ans.is_correct:
+            if student_ans.is_correct is True:
                 score += q.marks
                 correct_count += 1
-            else:
+            elif student_ans.is_correct is False:
                 wrong_count += 1
+            # If student_ans.is_correct is None (pending subjective evaluation), exclude from both
         else:
             wrong_count += 1
             

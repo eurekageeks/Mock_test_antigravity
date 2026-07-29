@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, ForeignKey, Text, Table
+from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, ForeignKey, Text, Table, JSON
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.core.database import Base
@@ -88,6 +88,7 @@ class Question(Base):
     correct_answer = Column(Text, nullable=False)  # choice key for MCQ (e.g. 'A') or expected text for text answer
     marks = Column(Float, nullable=False, default=1.0)
     explanation = Column(Text, nullable=True)
+    image_urls = Column(JSON, nullable=True)
     order_index = Column(Integer, nullable=False, default=0)
     
     # Relationships

@@ -63,6 +63,7 @@ const TestResults = () => {
   }
 
   const { attempt, answers } = data;
+  const hasPendingSubjective = attempt.pending_subjective_count > 0;
   const isPassed = attempt.result.is_passed;
 
   return (
@@ -71,9 +72,11 @@ const TestResults = () => {
         
         {/* Scorecard Header Card */}
         <div className={`relative overflow-hidden rounded-[32px] p-8 text-white shadow-xl ${
-          isPassed 
-            ? 'bg-gradient-to-tr from-emerald-800 to-emerald-500 shadow-emerald-500/10' 
-            : 'bg-gradient-to-tr from-rose-800 to-rose-500 shadow-rose-500/10'
+          hasPendingSubjective
+            ? 'bg-gradient-to-tr from-amber-600 to-amber-400 shadow-amber-500/10'
+            : isPassed 
+              ? 'bg-gradient-to-tr from-emerald-800 to-emerald-500 shadow-emerald-500/10' 
+              : 'bg-gradient-to-tr from-rose-800 to-rose-500 shadow-rose-500/10'
         }`}>
           <div className="absolute right-[-10%] bottom-[-50%] w-[350px] aspect-square rounded-full bg-white/10 blur-[60px] pointer-events-none"></div>
           
@@ -84,9 +87,9 @@ const TestResults = () => {
               </span>
               <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">{attempt.mock_test_title}</h1>
               <div className="flex items-center space-x-2 mt-4">
-                {isPassed ? <ShieldCheck className="h-6 w-6" /> : <ShieldAlert className="h-6 w-6" />}
+                {hasPendingSubjective ? <Clock className="h-6 w-6" /> : (isPassed ? <ShieldCheck className="h-6 w-6" /> : <ShieldAlert className="h-6 w-6" />)}
                 <span className="text-xl font-bold uppercase tracking-wide">
-                  {isPassed ? 'PASSED assessment' : 'FAILED assessment'}
+                  {hasPendingSubjective ? 'Submitted to Admin' : (isPassed ? 'PASSED assessment' : 'FAILED assessment')}
                 </span>
               </div>
             </div>
@@ -149,13 +152,17 @@ const TestResults = () => {
                       Question {idx + 1} • {ans.marks} Mark(s)
                     </span>
                     <div className="flex items-center space-x-1">
-                      {ans.is_correct ? (
+                      {ans.is_correct === true ? (
                         <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                           <CheckCircle className="h-3.5 w-3.5 mr-1" /> CORRECT
                         </span>
-                      ) : (
+                      ) : ans.is_correct === false ? (
                         <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400">
                           <XCircle className="h-3.5 w-3.5 mr-1" /> INCORRECT / EMPTY
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                          <Clock className="h-3.5 w-3.5 mr-1" /> PENDING REVIEW
                         </span>
                       )}
                     </div>

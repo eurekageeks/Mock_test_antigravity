@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Sun, Moon, Menu, X, GraduationCap, LogOut, User, BarChart, BookOpen, Layers, Database, ChevronDown } from 'lucide-react';
+import { Sun, Moon, Menu, X, GraduationCap, LogOut, User, BarChart, BookOpen, Layers, Database, ChevronDown, ClipboardCheck } from 'lucide-react';
 
 const Navbar = () => {
   const { user, logout, theme, toggleTheme } = useAuth();
@@ -87,9 +87,6 @@ const Navbar = () => {
                 </Link>
                 <Link to="/admin/tests" className={linkClass('/admin/tests')}>
                   <span className="flex items-center space-x-1.5"><BookOpen className="h-4 w-4 text-amber-500" /> <span>Mock Tests</span></span>
-                </Link>
-                <Link to="/admin/backup" className={linkClass('/admin/backup')}>
-                  <span className="flex items-center space-x-1.5"><Database className="h-4 w-4 text-emerald-600 dark:text-emerald-400" /> <span>Backup & Restore</span></span>
                 </Link>
               </>
             )}
@@ -194,6 +191,7 @@ const Navbar = () => {
                 <Link to="/admin/students" onClick={() => setMobileMenuOpen(false)} className="px-3 py-2 text-base font-medium rounded-lg">Students</Link>
                 <Link to="/admin/topics" onClick={() => setMobileMenuOpen(false)} className="px-3 py-2 text-base font-medium rounded-lg">Topics</Link>
                 <Link to="/admin/tests" onClick={() => setMobileMenuOpen(false)} className="px-3 py-2 text-base font-medium rounded-lg">Mock Tests</Link>
+                <Link to="/admin/submissions" onClick={() => setMobileMenuOpen(false)} className="px-3 py-2 text-base font-medium rounded-lg text-purple-600 dark:text-purple-400 font-bold">Subjective Mock Test</Link>
                 <Link to="/admin/backup" onClick={() => setMobileMenuOpen(false)} className="px-3 py-2 text-base font-medium rounded-lg text-emerald-600 dark:text-emerald-400 font-bold">Backup & Restore</Link>
                 <div className="h-[1px] bg-slate-200 dark:bg-slate-800 my-2"></div>
                 <button onClick={handleLogout} className="w-full flex items-center justify-center space-x-1 px-3 py-2 bg-red-500/10 text-red-600 dark:text-red-400 rounded-lg">

@@ -26,6 +26,7 @@ import TopicManagement from './pages/admin/TopicManagement';
 import MockTestManagement from './pages/admin/MockTestManagement';
 import QuestionManagement from './pages/admin/QuestionManagement';
 import BackupManagement from './pages/admin/BackupManagement';
+import SubmissionsManagement from './pages/admin/SubmissionsManagement';
 
 // Route Guard Components
 const RequireAuth = ({ children, requiredRole }) => {
@@ -188,6 +189,12 @@ const AppRoutes = () => {
       <Route path="/admin/tests/:test_id/questions" element={
         <RequireAuth requiredRole="admin">
           <AdminLayout><QuestionManagement /></AdminLayout>
+        </RequireAuth>
+      } />
+
+      <Route path="/admin/submissions" element={
+        <RequireAuth requiredRole="admin">
+          <AdminLayout><SubmissionsManagement /></AdminLayout>
         </RequireAuth>
       } />
 

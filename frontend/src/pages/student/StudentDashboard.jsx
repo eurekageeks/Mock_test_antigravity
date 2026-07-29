@@ -282,11 +282,13 @@ const StudentDashboard = () => {
                       {attempt.result ? (
                         <div className="text-right">
                           <span className={`inline-block px-2 py-0.5 rounded-lg text-[10px] font-bold ${
-                            attempt.result.is_passed 
-                              ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' 
-                              : 'bg-red-500/10 text-red-600 dark:text-red-400'
+                            attempt.pending_subjective_count > 0
+                              ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                              : attempt.result.is_passed 
+                                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' 
+                                : 'bg-red-500/10 text-red-600 dark:text-red-400'
                           }`}>
-                            {attempt.result.is_passed ? 'PASSED' : 'FAILED'}
+                            {attempt.pending_subjective_count > 0 ? 'PENDING' : (attempt.result.is_passed ? 'PASSED' : 'FAILED')}
                           </span>
                           <span className="block text-xs font-bold text-slate-700 dark:text-slate-300 mt-0.5">
                             {attempt.result.score} Marks ({attempt.result.percentage}%)

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import api from '../../services/api';
 import { 
   Users, Layers, FileText, CheckCircle, HelpCircle, 
-  Settings, ChevronRight, BarChart3, AlertCircle, Database
+  Settings, ChevronRight, BarChart3, AlertCircle, Database, ClipboardCheck
 } from 'lucide-react';
 
 const AdminDashboard = () => {
@@ -154,7 +154,7 @@ const AdminDashboard = () => {
             Quick Shortcuts
           </h3>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             <Link 
               to="/admin/students"
               className="p-6 bg-white dark:bg-slate-800 rounded-3xl border border-slate-200/50 dark:border-slate-700/50 hover:border-brand-500 dark:hover:border-brand-500 shadow-sm flex justify-between items-center group transition-colors duration-200"
@@ -186,6 +186,20 @@ const AdminDashboard = () => {
                 <span className="text-xs text-slate-400 mt-1 block">CRUD exams and seed questions.</span>
               </div>
               <ChevronRight className="h-5 w-5 text-slate-350 group-hover:text-brand-500 group-hover:translate-x-1 transition-all" />
+            </Link>
+
+            <Link 
+              to="/admin/submissions"
+              className="p-6 bg-white dark:bg-slate-800 rounded-3xl border border-purple-500/20 dark:border-purple-500/20 hover:border-purple-500 dark:hover:border-purple-500 shadow-sm flex justify-between items-center group transition-colors duration-200"
+            >
+              <div>
+                <span className="font-bold text-base text-purple-600 dark:text-purple-400 block flex items-center gap-1.5">
+                  <ClipboardCheck className="h-4 w-4" />
+                  <span>Subjective Mock Test</span>
+                </span>
+                <span className="text-xs text-slate-400 mt-1 block">Grade subjective test answers.</span>
+              </div>
+              <ChevronRight className="h-5 w-5 text-purple-500 group-hover:translate-x-1 transition-all" />
             </Link>
 
             <Link 

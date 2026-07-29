@@ -6,15 +6,16 @@ import io
 import pdfplumber
 from app.core.database import get_db
 from app.models.models import (
-    User, Topic, MockTest, Question, QuestionOption, TestAttempt, Result
+    User, Topic, MockTest, Question, QuestionOption, TestAttempt, Result, StudentAnswer
 )
 from app.schemas.schemas import (
     AdminDashboardStats, UserResponse, StudentStatusUpdate, TestAttemptResponse,
     TopicCreate, TopicResponse, MockTestCreate, MockTestResponse,
     QuestionCreate, QuestionResponse, QuestionReorder,
-    BulkQuestionDelete, BulkQuestionUpdateMarks
+    BulkQuestionDelete, BulkQuestionUpdateMarks, AttemptDetailReviewResponse
 )
 from app.api.deps import get_admin_user
+from app.api.endpoints.student import submit_attempt_internal
 
 router = APIRouter()
 
@@ -99,7 +100,142 @@ def get_student_attempts(
     for attempt in attempts:
         attempt.mock_test_title = attempt.mock_test.title
         attempt.mock_test_total_marks = attempt.mock_test.total_marks
+        attempt.student_name = attempt.user.name if attempt.user else None
+        attempt.student_email = attempt.user.email if attempt.user else None
     return attempts
+
+@router.get("/attempts", response_model=List[TestAttemptResponse])
+def get_all_attempts(db: Session = Depends(get_db), current_user: User = Depends(get_admin_user)):
+    all_attempts = db.query(TestAttempt).order_by(TestAttempt.id.desc()).all()
+    filtered_attempts = []
+    for attempt in all_attempts:
+        if not attempt.mock_test_id:
+            continue
+        subj_count = db.query(Question).filter(
+            Question.mock_test_id == attempt.mock_test_id,
+            Question.type == 'text'
+        ).count()
+        if subj_count == 0:
+            continue
+            
+        pending_subj = db.query(StudentAnswer).join(Question).filter(
+            StudentAnswer.test_attempt_id == attempt.id,
+            Question.type == 'text',
+            StudentAnswer.is_correct == None
+        ).count()
+        
+        attempt.mock_test_title = attempt.mock_test.title if attempt.mock_test else "Unknown Test"
+        attempt.mock_test_total_marks = attempt.mock_test.total_marks if attempt.mock_test else 0.0
+        attempt.topic_name = attempt.mock_test.topic.name if (attempt.mock_test and attempt.mock_test.topic) else "General"
+        attempt.student_name = attempt.user.name if attempt.user else "Unknown Student"
+        attempt.student_email = attempt.user.email if attempt.user else "N/A"
+        attempt.student_mobile = attempt.user.mobile if attempt.user else "N/A"
+        attempt.subjective_questions_count = subj_count
+        attempt.pending_subjective_count = pending_subj
+        filtered_attempts.append(attempt)
+    return filtered_attempts
+
+@router.get("/attempts/{attempt_id}/review", response_model=AttemptDetailReviewResponse)
+def get_admin_attempt_review(
+    attempt_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_admin_user)
+):
+    attempt = db.query(TestAttempt).filter(TestAttempt.id == attempt_id).first()
+    if not attempt:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Test attempt not found.")
+        
+    questions = db.query(Question).filter(Question.mock_test_id == attempt.mock_test_id).order_by(Question.order_index).all()
+    
+    review_answers = []
+    for q in questions:
+        student_ans = db.query(StudentAnswer).filter(
+            StudentAnswer.test_attempt_id == attempt.id,
+            StudentAnswer.question_id == q.id
+        ).first()
+        
+        selected_option = student_ans.selected_option if student_ans else None
+        text_answer = student_ans.text_answer if student_ans else None
+        is_correct = student_ans.is_correct if student_ans else False
+        
+        review_answers.append({
+            "id": student_ans.id if student_ans else 0,
+            "question_id": q.id,
+            "selected_option": selected_option,
+            "text_answer": text_answer,
+            "is_correct": is_correct,
+            "question_text": q.question_text,
+            "question_type": q.type,
+            "correct_answer": q.correct_answer,
+            "explanation": q.explanation,
+            "image_urls": q.image_urls,
+            "marks": q.marks,
+            "options": q.options
+        })
+        
+    subj_count = db.query(Question).filter(
+        Question.mock_test_id == attempt.mock_test_id,
+        Question.type == 'text'
+    ).count()
+    pending_subj = db.query(StudentAnswer).join(Question).filter(
+        StudentAnswer.test_attempt_id == attempt.id,
+        Question.type == 'text',
+        StudentAnswer.is_correct == None
+    ).count()
+
+    attempt.mock_test_title = attempt.mock_test.title if attempt.mock_test else "Unknown Test"
+    attempt.mock_test_total_marks = attempt.mock_test.total_marks if attempt.mock_test else 0.0
+    attempt.topic_name = attempt.mock_test.topic.name if (attempt.mock_test and attempt.mock_test.topic) else "General"
+    attempt.student_name = attempt.user.name if attempt.user else "Unknown Student"
+    attempt.student_email = attempt.user.email if attempt.user else "N/A"
+    attempt.student_mobile = attempt.user.mobile if attempt.user else "N/A"
+    attempt.subjective_questions_count = subj_count
+    attempt.pending_subjective_count = pending_subj
+    return {
+        "attempt": attempt,
+        "answers": review_answers
+    }
+
+@router.post("/attempts/{attempt_id}/grade/{question_id}", response_model=AttemptDetailReviewResponse)
+def grade_student_answer(
+    attempt_id: int,
+    question_id: int,
+    is_correct: bool,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_admin_user)
+):
+    attempt = db.query(TestAttempt).filter(TestAttempt.id == attempt_id).first()
+    if not attempt:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Test attempt not found.")
+        
+    question = db.query(Question).filter(Question.id == question_id).first()
+    if not question:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Question not found.")
+        
+    student_ans = db.query(StudentAnswer).filter(
+        StudentAnswer.test_attempt_id == attempt_id,
+        StudentAnswer.question_id == question_id
+    ).first()
+    
+    if student_ans:
+        student_ans.is_correct = is_correct
+    else:
+        student_ans = StudentAnswer(
+            test_attempt_id=attempt_id,
+            question_id=question_id,
+            selected_option=None,
+            text_answer=None,
+            is_correct=is_correct
+        )
+        db.add(student_ans)
+        
+    db.commit()
+    
+    # Re-calculate overall score and ranks for this attempt
+    if attempt.status == "submitted":
+        submit_attempt_internal(attempt_id, db)
+        
+    return get_admin_attempt_review(attempt_id, db, current_user)
 
 # ----------------- Topic CRUD -----------------
 @router.get("/topics", response_model=List[TopicResponse])
@@ -286,6 +422,7 @@ def add_question(
         correct_answer=q_in.correct_answer,
         marks=q_in.marks,
         explanation=q_in.explanation,
+        image_urls=q_in.image_urls,
         order_index=q_count
     )
     db.add(question)
@@ -322,6 +459,7 @@ def update_question(
     question.correct_answer = q_in.correct_answer
     question.marks = q_in.marks
     question.explanation = q_in.explanation
+    question.image_urls = q_in.image_urls
     
     # Update options if MCQ
     if q_in.type == "mcq" and q_in.options:
@@ -406,6 +544,7 @@ def duplicate_question(
         correct_answer=orig_q.correct_answer,
         marks=orig_q.marks,
         explanation=orig_q.explanation,
+        image_urls=orig_q.image_urls,
         order_index=q_count
     )
     db.add(dup_q)

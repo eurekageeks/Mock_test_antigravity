@@ -82,11 +82,13 @@ const StudentAttempts = () => {
                         {attempt.result ? (
                           <div className="flex items-center space-x-2">
                             <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold ${
-                              attempt.result.is_passed 
-                                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' 
-                                : 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
+                              attempt.pending_subjective_count > 0
+                                ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                                : attempt.result.is_passed 
+                                  ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' 
+                                  : 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
                             }`}>
-                              {attempt.result.is_passed ? 'PASSED' : 'FAILED'}
+                              {attempt.pending_subjective_count > 0 ? 'PENDING' : (attempt.result.is_passed ? 'PASSED' : 'FAILED')}
                             </span>
                             <span className="text-xs text-slate-700 dark:text-slate-300">
                               {attempt.result.score} Marks ({attempt.result.percentage}%)

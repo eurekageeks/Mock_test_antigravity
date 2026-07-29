@@ -1,8 +1,10 @@
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+import os
 from app.core.config import settings
 from app.core.database import engine, Base, SessionLocal
-from app.api.endpoints import auth, student, admin, backup
+from app.api.endpoints import auth, student, admin, backup, upload
 from app.seed import seed_data
 
 # Initialize the database tables on startup
@@ -35,6 +37,11 @@ app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(student.router, prefix="/api/student", tags=["Student Panel"])
 app.include_router(admin.router, prefix="/api/admin", tags=["Admin Panel"])
 app.include_router(backup.router, prefix="/api/admin/backup", tags=["Admin Backup & Restore"])
+app.include_router(upload.router, prefix="/api/upload", tags=["Uploads"])
+
+# Mount uploads directory for serving static image files
+os.makedirs("uploads", exist_ok=True)
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 @app.get("/")
 def read_root():

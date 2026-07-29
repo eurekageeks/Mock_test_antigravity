@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { BarChart, User, Layers, BookOpen, Database, LogOut, ShieldCheck, ChevronRight } from 'lucide-react';
+import { BarChart, User, Layers, BookOpen, Database, LogOut, ShieldCheck, ChevronRight, ClipboardCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import Navbar from './Navbar';
 import Footer from './Footer';
@@ -50,6 +50,13 @@ const AdminLayout = ({ children }) => {
       icon: BookOpen,
       iconColor: 'text-amber-500',
       activeBg: 'bg-amber-600 text-white shadow-lg shadow-amber-500/25',
+    },
+    {
+      label: 'Subjective Mock Test',
+      path: '/admin/submissions',
+      icon: ClipboardCheck,
+      iconColor: 'text-purple-500',
+      activeBg: 'bg-purple-600 text-white shadow-lg shadow-purple-500/25',
     },
     {
       label: 'Backup & Restore',

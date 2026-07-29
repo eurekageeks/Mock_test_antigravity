@@ -30,6 +30,9 @@ const QuestionManagement = () => {
   const [optB, setOptB] = useState('');
   const [optC, setOptC] = useState('');
   const [optD, setOptD] = useState('');
+  const [images, setImages] = useState([]);
+  const [imageUploading, setImageUploading] = useState(false);
+  const imageInputRef = useRef(null);
   const [submitting, setSubmitting] = useState(false);
 
   // PDF upload states
@@ -158,6 +161,7 @@ const QuestionManagement = () => {
     setCorrectAnswer('A');
     setMarks(2.0);
     setExplanation('');
+    setImages([]);
     setOptA(''); setOptB(''); setOptC(''); setOptD('');
     setShowModal(true);
   };
@@ -169,6 +173,7 @@ const QuestionManagement = () => {
     setCorrectAnswer(q.correct_answer);
     setMarks(q.marks);
     setExplanation(q.explanation || '');
+    setImages(q.image_urls || []);
     if (q.type === 'mcq') {
       setOptA(q.options.find(o => o.option_key === 'A')?.option_text || '');
       setOptB(q.options.find(o => o.option_key === 'B')?.option_text || '');
@@ -176,6 +181,33 @@ const QuestionManagement = () => {
       setOptD(q.options.find(o => o.option_key === 'D')?.option_text || '');
     }
     setShowModal(true);
+  };
+
+  const handleImageUpload = async (e) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    const formData = new FormData();
+    for (let i = 0; i < files.length; i++) {
+      formData.append('files', files[i]);
+    }
+    setImageUploading(true);
+    try {
+      const res = await api.post('/api/upload/images', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      setImages(prev => [...prev, ...res.data]);
+      showMessage("Images uploaded successfully!", "success");
+    } catch (err) {
+      console.error(err);
+      showMessage("Failed to upload images", "error");
+    } finally {
+      setImageUploading(false);
+      if (imageInputRef.current) imageInputRef.current.value = '';
+    }
+  };
+
+  const removeImage = (idxToRemove) => {
+    setImages(prev => prev.filter((_, idx) => idx !== idxToRemove));
   };
 
   const handleCreateOrUpdateQuestion = async (e) => {
@@ -195,6 +227,7 @@ const QuestionManagement = () => {
       correct_answer: correctAnswer,
       marks: parseFloat(marks),
       explanation: explanation || null,
+      image_urls: images.length > 0 ? images : null,
       options: optionsPayload
     };
 
@@ -740,7 +773,7 @@ Answer: B`}</pre>
               <div>
                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Question Text</label>
                 <textarea
-                  rows={3}
+                  rows={6}
                   required
                   value={questionText}
                   onChange={(e) => setQuestionText(e.target.value)}
@@ -748,6 +781,27 @@ Answer: B`}</pre>
                   placeholder="Enter full question description..."
                 />
               </div>
+
+              {/* Image Upload Section */}
+              <div>
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Reference Images (Optional)</label>
+                <div className="flex flex-wrap gap-4 mb-3">
+                  {images && images.map((url, idx) => (
+                    <div key={idx} className="relative group rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 w-24 h-24">
+                      <img src={`http://localhost:8000${url}`} alt={`img-${idx}`} className="w-full h-full object-cover" />
+                      <button type="button" onClick={() => removeImage(idx)} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                  <button type="button" onClick={() => imageInputRef.current?.click()} className="w-24 h-24 border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-xl flex flex-col items-center justify-center text-slate-500 hover:text-brand-500 hover:border-brand-500 hover:bg-brand-50 dark:hover:bg-brand-900/20 transition-all">
+                    {imageUploading ? <Loader className="w-6 h-6 animate-spin" /> : <Upload className="w-6 h-6" />}
+                    <span className="text-[10px] font-semibold mt-1">Upload</span>
+                  </button>
+                </div>
+                <input type="file" multiple accept="image/*" className="hidden" ref={imageInputRef} onChange={handleImageUpload} />
+              </div>
+
 
               {type === 'mcq' && (
                 <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-205 dark:border-slate-700 space-y-4">
@@ -785,8 +839,8 @@ Answer: B`}</pre>
                       <option value="D">Option D</option>
                     </select>
                   ) : (
-                    <input
-                      type="text"
+                    <textarea
+                      rows={4}
                       required
                       value={correctAnswer}
                       onChange={(e) => setCorrectAnswer(e.target.value)}
@@ -797,8 +851,8 @@ Answer: B`}</pre>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Explanation (Optional)</label>
-                  <input
-                    type="text"
+                  <textarea
+                    rows={4}
                     value={explanation}
                     onChange={(e) => setExplanation(e.target.value)}
                     className="w-full px-4 py-3 rounded-xl border border-slate-350 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm dark:text-white font-medium"
