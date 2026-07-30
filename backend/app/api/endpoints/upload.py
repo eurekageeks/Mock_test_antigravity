@@ -39,6 +39,6 @@ async def upload_images(
             file.file.close()
             
         # Add the URL path to the list
-        uploaded_urls.append(f"/uploads/{unique_filename}")
+        uploaded_urls.append(f"/api/uploads/{unique_filename}")
         
     return uploaded_urls

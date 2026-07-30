@@ -27,6 +27,13 @@ try:
         if "auto_calculate_marks" not in test_columns:
             conn.execute(text("ALTER TABLE mock_tests ADD COLUMN auto_calculate_marks BOOLEAN DEFAULT 1;"))
             
+        # Migrate old image URLs in questions to include /api prefix
+        conn.execute(text("""
+            UPDATE questions 
+            SET image_urls = REPLACE(image_urls, '"/uploads/', '"/api/uploads/') 
+            WHERE image_urls LIKE '%"/uploads/%';
+        """))
+            
         conn.commit()
 except Exception as e:
     print(f"Auto-migration error: {e}")
@@ -62,7 +69,7 @@ app.include_router(upload.router, prefix="/api/upload", tags=["Uploads"])
 
 # Mount uploads directory for serving static image files
 os.makedirs("uploads", exist_ok=True)
-app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+app.mount("/api/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 @app.get("/")
 def read_root():
