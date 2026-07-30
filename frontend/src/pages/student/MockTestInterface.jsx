@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { Clock, AlertTriangle, ChevronLeft, ChevronRight, Send } from 'lucide-react';
+import { getImageUrl } from '../../utils/imageHelper';
 
 const MockTestInterface = () => {
   const { attempt_id } = useParams();
@@ -237,7 +238,7 @@ const MockTestInterface = () => {
             {currentQuestion?.image_urls && currentQuestion.image_urls.length > 0 && (
               <div className="mt-4 flex flex-wrap gap-4">
                 {currentQuestion.image_urls.map((url, idx) => (
-                  <img key={idx} src={`${api.defaults.baseURL}${url}`} alt={`Question image ${idx+1}`} className="max-w-full sm:max-w-md rounded-xl shadow border border-slate-200 dark:border-slate-700" />
+                  <img key={idx} src={getImageUrl(url)} alt={`Question image ${idx+1}`} className="max-w-full sm:max-w-md rounded-xl shadow border border-slate-200 dark:border-slate-700" />
                 ))}
               </div>
             )}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../../services/api';
+import { getImageUrl } from '../../utils/imageHelper';
 import {
   Plus, Edit3, Trash2, Copy, GripVertical, ChevronLeft,
   HelpCircle, Save, X, AlertCircle, Upload, FileText,
@@ -836,7 +837,7 @@ Answer: B`}</pre>
                 <div className="flex flex-wrap gap-4 mb-3">
                   {images && images.map((url, idx) => (
                     <div key={idx} className="relative group rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 w-24 h-24">
-                      <img src={`${api.defaults.baseURL}${url}`} alt={`img-${idx}`} className="w-full h-full object-cover" />
+                      <img src={getImageUrl(url)} alt={`img-${idx}`} className="w-full h-full object-cover" />
                       <button type="button" onClick={() => removeImage(idx)} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <X className="w-3 h-3" />
                       </button>

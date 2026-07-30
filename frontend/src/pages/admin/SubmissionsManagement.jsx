@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
+import { getImageUrl } from '../../utils/imageHelper';
 import { 
   ClipboardCheck, Search, Filter, CheckCircle2, XCircle, AlertCircle, 
   Clock, User, Award, FileText, ArrowRight, X, Loader2, RefreshCw, 
@@ -597,7 +598,7 @@ const SubmissionsManagement = () => {
                               {ans.image_urls && ans.image_urls.length > 0 && (
                                 <div className="mb-4 flex flex-wrap gap-3">
                                   {ans.image_urls.map((url, idx) => (
-                                    <img key={idx} src={`${api.defaults.baseURL}${url}`} alt={`Q Image ${idx+1}`} className="max-w-xs rounded-xl shadow-sm border border-slate-200 dark:border-slate-700" />
+                                    <img key={idx} src={getImageUrl(url)} alt={`Q Image ${idx+1}`} className="max-w-xs rounded-xl shadow-sm border border-slate-200 dark:border-slate-700" />
                                   ))}
                                 </div>
                               )}
