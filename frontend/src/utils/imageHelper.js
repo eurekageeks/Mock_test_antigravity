@@ -23,8 +23,9 @@ export const getImageUrl = (url) => {
 
 export const processHtmlImages = (htmlContent) => {
   if (!htmlContent) return '';
-  // Find all img tags and replace their src attribute using getImageUrl
-  return htmlContent.replace(/<img([^>]+)src=["']([^"']+)["']([^>]*)>/gi, (match, before, src, after) => {
-    return `<img${before}src="${getImageUrl(src)}"${after}>`;
+  // Match src attributes with or without quotes: src="url", src='url', or src=url
+  return htmlContent.replace(/<img\s+([^>]*?)src=(?:["']([^"']+)["']|([^ >]+))([^>]*)>/gi, (match, before, srcQuoted, srcUnquoted, after) => {
+    const src = srcQuoted || srcUnquoted;
+    return `<img ${before}src="${getImageUrl(src)}"${after}>`;
   });
 };
