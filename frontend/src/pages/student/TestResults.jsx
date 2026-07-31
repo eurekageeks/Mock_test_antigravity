@@ -63,6 +63,31 @@ const TestResults = () => {
   }
 
   const { attempt, answers } = data;
+  
+  if (attempt.status === 'cancelled_cheating') {
+    return (
+      <div className="bg-slate-50 dark:bg-slate-900 min-h-screen p-6 sm:p-8 flex justify-center items-center transition-colors duration-300">
+        <div className="max-w-xl mx-auto bg-white dark:bg-slate-800 rounded-[32px] p-8 md:p-12 text-center shadow-xl border-2 border-red-500 animate-fade-in">
+          <div className="w-24 h-24 bg-red-100 dark:bg-red-900/50 rounded-full flex items-center justify-center mx-auto mb-6">
+            <ShieldAlert className="h-12 w-12 text-red-600 dark:text-red-500 animate-pulse" />
+          </div>
+          <h1 className="text-3xl font-black text-slate-900 dark:text-white mb-4">Test Cancelled</h1>
+          <p className="text-slate-600 dark:text-slate-300 mb-8 leading-relaxed font-medium">
+            Your assessment was automatically cancelled due to multiple violations of the exam rules (navigating away from the exam window).
+          </p>
+          <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-2xl mb-8">
+            <p className="text-sm font-bold text-red-600 dark:text-red-400">
+              Recorded warnings: {attempt.warnings_count}
+            </p>
+          </div>
+          <Link to="/student/dashboard" className="inline-flex items-center px-8 py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold rounded-2xl shadow-lg transition-all duration-200">
+            <Home className="mr-2 h-5 w-5" /> Return to Dashboard
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   const hasPendingSubjective = attempt.pending_subjective_count > 0;
   const isPassed = attempt.result.is_passed;
 
@@ -169,9 +194,10 @@ const TestResults = () => {
                   </div>
 
                   {/* Question Text */}
-                  <p className="font-bold text-slate-950 dark:text-white text-base leading-relaxed">
-                    {ans.question_text}
-                  </p>
+                  <div 
+                    className="font-bold text-slate-950 dark:text-white text-base leading-relaxed prose dark:prose-invert max-w-none"
+                    dangerouslySetInnerHTML={{ __html: ans.question_text }}
+                  />
 
                   {/* Options List (only if MCQ) */}
                   {isMCQ && ans.options && (

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../../services/api';
 import { getImageUrl } from '../../utils/imageHelper';
+import SimpleEditor from '../../components/SimpleEditor';
 import {
   Plus, Edit3, Trash2, Copy, GripVertical, ChevronLeft,
   HelpCircle, Save, X, AlertCircle, Upload, FileText,
@@ -692,9 +693,10 @@ Answer: B`}</pre>
                           {q.type}
                         </span>
                       </div>
-                      <p className="font-bold text-sm text-slate-900 dark:text-white leading-relaxed line-clamp-2">
-                        {q.question_text}
-                      </p>
+                      <div 
+                        className="font-bold text-sm text-slate-900 dark:text-white leading-relaxed line-clamp-3 prose dark:prose-invert max-w-none"
+                        dangerouslySetInnerHTML={{ __html: q.question_text }}
+                      />
                       <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold flex items-center flex-wrap gap-2.5">
                         <span>Correct Answer: <strong className="text-emerald-500">{q.correct_answer}</strong></span>
                         {q.type === 'mcq' && (
@@ -819,15 +821,12 @@ Answer: B`}</pre>
                 </div>
               </div>
 
-              <div>
+              <div className="mb-8">
                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Question Text</label>
-                <textarea
-                  rows={6}
-                  required
+                <SimpleEditor 
                   value={questionText}
-                  onChange={(e) => setQuestionText(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-350 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm dark:text-white font-medium"
-                  placeholder="Enter full question description..."
+                  onChange={setQuestionText}
+                  className="h-48"
                 />
               </div>
 

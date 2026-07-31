@@ -117,7 +117,8 @@ class TestAttempt(Base):
     start_time = Column(DateTime, default=datetime.utcnow)
     end_time = Column(DateTime, nullable=True)
     time_taken_seconds = Column(Integer, nullable=True)
-    status = Column(String(50), nullable=False, default="started")  # 'started', 'submitted'
+    status = Column(String(50), nullable=False, default="started")  # 'started', 'submitted', 'cancelled_cheating'
+    warnings_count = Column(Integer, nullable=False, default=0)
     
     # Relationships
     user = relationship("User", back_populates="attempts")

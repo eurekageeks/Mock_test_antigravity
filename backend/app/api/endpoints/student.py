@@ -188,9 +188,21 @@ def list_student_tests(
         if profile:
             skill_names = {s.name.strip().lower() for s in profile.skills}
 
+    # Exclude tests that the student has a cancelled_cheating attempt for
+    cancelled_test_ids = set()
+    if current_user:
+        cancelled_attempts = db.query(TestAttempt.mock_test_id).filter(
+            TestAttempt.user_id == current_user.id,
+            TestAttempt.status == "cancelled_cheating"
+        ).all()
+        cancelled_test_ids = {a[0] for a in cancelled_attempts}
+
     recommended = []
     others = []
     for test in tests:
+        if test.id in cancelled_test_ids:
+            continue
+            
         test.topic_name = test.topic.name
         test.question_count = len(test.questions)
         test.has_subjective = any(q.type == 'text' for q in test.questions)
@@ -239,6 +251,18 @@ def start_test_attempt(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Mock test not found or is not published yet."
+        )
+        
+    # Check if the student has a cancelled attempt for cheating
+    cancelled_attempt = db.query(TestAttempt).filter(
+        TestAttempt.user_id == current_user.id,
+        TestAttempt.mock_test_id == test_id,
+        TestAttempt.status == "cancelled_cheating"
+    ).first()
+    if cancelled_attempt:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Your previous attempt for this test was cancelled due to a violation of exam rules. Please contact the administrator to request a restart."
         )
         
     # 2. Check for an active, incomplete attempt
@@ -296,6 +320,7 @@ def start_test_attempt(
                 question_text=q.question_text,
                 marks=q.marks,
                 order_index=q.order_index,
+                image_urls=q.image_urls,
                 options=[StudentQuestionOption(
                     id=opt.id,
                     option_key=opt.option_key,
@@ -314,7 +339,8 @@ def start_test_attempt(
         "instructions": test.instructions,
         "questions": student_questions,
         "start_time": active_attempt.start_time,
-        "time_remaining_seconds": time_remaining_seconds
+        "time_remaining_seconds": time_remaining_seconds,
+        "warnings_count": active_attempt.warnings_count
     }
 
 @router.get("/attempts/{attempt_id}", response_model=StudentTestStartResponse)
@@ -387,7 +413,41 @@ def get_active_attempt_details(
         "instructions": attempt.mock_test.instructions,
         "questions": student_questions,
         "start_time": attempt.start_time,
-        "time_remaining_seconds": time_remaining_seconds
+        "time_remaining_seconds": time_remaining_seconds,
+        "warnings_count": attempt.warnings_count
+    }
+
+@router.post("/attempts/{attempt_id}/warning")
+def log_warning(
+    attempt_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_student_user)
+):
+    attempt = db.query(TestAttempt).filter(
+        TestAttempt.id == attempt_id,
+        TestAttempt.user_id == current_user.id
+    ).first()
+    
+    if not attempt:
+        raise HTTPException(status_code=404, detail="Test attempt not found.")
+        
+    if attempt.status != "started":
+        return {"success": False, "message": "Test already submitted."}
+        
+    attempt.warnings_count += 1
+    
+    if attempt.warnings_count >= 3:
+        attempt.status = "cancelled_cheating"
+        attempt.end_time = datetime.utcnow()
+        attempt.time_taken_seconds = int((attempt.end_time - attempt.start_time).total_seconds())
+        
+    db.commit()
+    db.refresh(attempt)
+    
+    return {
+        "success": True, 
+        "warnings_count": attempt.warnings_count, 
+        "status": attempt.status
     }
 
 @router.post("/attempts/{attempt_id}/save-answer", response_model=AnswerSaveResponse)
@@ -516,6 +576,35 @@ def get_attempt_result(
             detail="Attempt not found."
         )
         
+    if attempt.status == "cancelled_cheating":
+        # Create a mock result for cancelled tests
+        return {
+            "attempt": {
+                "id": attempt.id,
+                "user_id": attempt.user_id,
+                "mock_test_id": attempt.mock_test_id,
+                "start_time": attempt.start_time,
+                "end_time": attempt.end_time,
+                "status": attempt.status,
+                "mock_test_title": "Cancelled Assessment",
+                "mock_test_total_marks": 0,
+                "pending_subjective_count": 0,
+                "time_taken_seconds": attempt.time_taken_seconds or 0,
+                "warnings_count": attempt.warnings_count,
+                "result": {
+                    "id": 0,
+                    "test_attempt_id": attempt.id,
+                    "score": 0,
+                    "percentage": 0,
+                    "is_passed": False,
+                    "correct_count": 0,
+                    "wrong_count": 0,
+                    "rank": None
+                }
+            },
+            "answers": []
+        }
+
     if attempt.status != "submitted" or not attempt.result:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

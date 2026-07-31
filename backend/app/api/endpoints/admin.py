@@ -115,7 +115,9 @@ def get_all_attempts(db: Session = Depends(get_db), current_user: User = Depends
             Question.mock_test_id == attempt.mock_test_id,
             Question.type == 'text'
         ).count()
-        if subj_count == 0:
+        
+        # Include attempts if they have subjective questions OR if they were cancelled due to cheating
+        if subj_count == 0 and attempt.status != "cancelled_cheating":
             continue
             
         pending_subj = db.query(StudentAnswer).join(Question).filter(
@@ -766,3 +768,40 @@ async def upload_pdf_questions(
         "imported_count": len(created_questions),
         "questions": created_questions
     }
+
+@router.post("/attempts/{attempt_id}/restart")
+def restart_student_attempt(
+    attempt_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_admin_user)
+):
+    attempt = db.query(TestAttempt).filter(TestAttempt.id == attempt_id).first()
+    if not attempt:
+        raise HTTPException(status_code=404, detail="Test attempt not found.")
+        
+    attempt.status = "started"
+    attempt.warnings_count = 0
+    attempt.end_time = None
+    attempt.time_taken_seconds = None
+    
+    # Also delete the result if one was generated
+    if attempt.result:
+        db.delete(attempt.result)
+        
+    db.commit()
+    return {"success": True, "message": "Test attempt restarted successfully."}
+
+@router.post("/attempts/{attempt_id}/cancel")
+def cancel_student_attempt(
+    attempt_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_admin_user)
+):
+    attempt = db.query(TestAttempt).filter(TestAttempt.id == attempt_id).first()
+    if not attempt:
+        raise HTTPException(status_code=404, detail="Test attempt not found.")
+        
+    attempt.status = "cancelled_cheating"
+    attempt.end_time = datetime.utcnow()
+    db.commit()
+    return {"success": True, "message": "Test attempt cancelled successfully."}

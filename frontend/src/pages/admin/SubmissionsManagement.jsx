@@ -82,6 +82,30 @@ const SubmissionsManagement = () => {
     }
   };
 
+  const handleRestartAttempt = async (attemptId) => {
+    if (!window.confirm("Are you sure you want to completely restart this test attempt? This will permanently delete the current attempt and allow the student to start fresh.")) return;
+    try {
+      await api.post(`/api/admin/attempts/${attemptId}/restart`);
+      showNotification('success', 'Test attempt restarted successfully.');
+      fetchAttempts();
+    } catch (err) {
+      console.error("Failed to restart attempt:", err);
+      showNotification('error', 'Failed to restart attempt.');
+    }
+  };
+
+  const handleCancelAttempt = async (attemptId) => {
+    if (!window.confirm("Are you sure you want to forcefully cancel this test attempt? It will be marked as cancelled due to cheating.")) return;
+    try {
+      await api.post(`/api/admin/attempts/${attemptId}/cancel`);
+      showNotification('success', 'Test attempt cancelled successfully.');
+      fetchAttempts();
+    } catch (err) {
+      console.error("Failed to cancel attempt:", err);
+      showNotification('error', 'Failed to cancel attempt.');
+    }
+  };
+
   // Filter attempts
   const filteredAttempts = attempts.filter(att => {
     const matchesSearch = (
@@ -98,6 +122,7 @@ const SubmissionsManagement = () => {
     // Check if subjective questions are pending grading
     if (statusFilter === 'pending') return (att.pending_subjective_count > 0) || att.status === 'in_progress';
     if (statusFilter === 'graded') return (att.pending_subjective_count === 0) && att.result && att.result.score !== null;
+    if (statusFilter === 'violations') return att.status === 'cancelled_cheating';
     return true;
   });
 
@@ -138,13 +163,13 @@ const SubmissionsManagement = () => {
               </div>
               <div>
                 <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-                  <span>Subjective Questions Manual Grading Console</span>
+                  <span>Submissions & Violations Console</span>
                   <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-700">
-                    Paragraph Reviews
+                    Grading & Alerts
                   </span>
                 </h1>
                 <p className="text-slate-500 dark:text-slate-400 mt-0.5 text-sm">
-                  Showing exam submissions that contain subjective paragraph questions. Check student details and manually assign right/wrong ticks.
+                  Showing subjective test submissions that need manual checking, and any tests flagged for cheating violations.
                 </p>
               </div>
             </div>
@@ -173,7 +198,7 @@ const SubmissionsManagement = () => {
 
           <div className="flex items-center gap-2">
             <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-2">Filter Status:</span>
-            {['all', 'pending', 'graded'].map((filter) => (
+            {['all', 'pending', 'graded', 'violations'].map((filter) => (
               <button
                 key={filter}
                 onClick={() => setStatusFilter(filter)}
@@ -183,7 +208,7 @@ const SubmissionsManagement = () => {
                     : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
                 }`}
               >
-                {filter === 'all' ? 'All Subjective Tests' : filter === 'pending' ? '⏳ Needs Grading' : '✅ Evaluated'}
+                {filter === 'all' ? 'All Submissions' : filter === 'pending' ? '⏳ Needs Grading' : filter === 'graded' ? '✅ Evaluated' : '⚠️ Violations'}
               </button>
             ))}
           </div>
@@ -276,27 +301,41 @@ const SubmissionsManagement = () => {
 
                         {/* Subjective Qs Status */}
                         <td className="py-4 px-6">
-                          <div className="space-y-1.5">
-                            <div className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                              📝 Subjective Qs: <span className="font-bold text-purple-600 dark:text-purple-400">{attempt.subjective_questions_count || 0}</span>
+                          {attempt.status === 'cancelled_cheating' ? (
+                            <span className="text-xs font-semibold text-slate-500 italic">Not Applicable</span>
+                          ) : (
+                            <div className="space-y-1.5">
+                              <div className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                📝 Subjective Qs: <span className="font-bold text-purple-600 dark:text-purple-400">{attempt.subjective_questions_count || 0}</span>
+                              </div>
+                              {needsGrading ? (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 animate-pulse">
+                                  <Clock className="w-3.5 h-3.5" />
+                                  <span>{attempt.pending_subjective_count} Pending Review</span>
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                  <span>All Evaluated</span>
+                                </span>
+                              )}
                             </div>
-                            {needsGrading ? (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 animate-pulse">
-                                <Clock className="w-3.5 h-3.5" />
-                                <span>{attempt.pending_subjective_count} Pending Review</span>
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                                <CheckCircle2 className="w-3.5 h-3.5" />
-                                <span>All Evaluated</span>
-                              </span>
-                            )}
-                          </div>
+                          )}
                         </td>
 
                         {/* Score / Pass */}
                         <td className="py-4 px-6">
-                          {hasResult ? (
+                          {attempt.status === 'cancelled_cheating' ? (
+                            <div className="space-y-1">
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20">
+                                <ShieldAlert className="w-3.5 h-3.5" />
+                                <span>Cheating Detected</span>
+                              </span>
+                              <div className="text-[11px] text-red-500 font-semibold pl-1">
+                                {attempt.warnings_count || 0} Warnings
+                              </div>
+                            </div>
+                          ) : hasResult ? (
                             <div className="space-y-1">
                               <div className="flex items-center gap-2">
                                 <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${
@@ -321,18 +360,35 @@ const SubmissionsManagement = () => {
 
                         {/* Action */}
                         <td className="py-4 px-6 text-right">
-                          <button
-                            onClick={() => handleOpenReview(attempt)}
-                            className={`inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl font-bold text-xs shadow-sm transition-all hover:scale-[1.02] active:scale-[0.98] ${
-                              needsGrading
-                                ? 'bg-purple-600 hover:bg-purple-700 text-white shadow-purple-500/25 ring-2 ring-purple-400/50'
-                                : 'bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white'
-                            }`}
-                          >
+                          {attempt.status === 'cancelled_cheating' ? (
+                            <div className="flex items-center justify-end gap-2">
+                              <button 
+                                onClick={() => handleRestartAttempt(attempt.id)}
+                                className="px-3 py-1.5 rounded-lg font-bold text-xs bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors"
+                              >
+                                Restart
+                              </button>
+                              <button 
+                                onClick={() => handleCancelAttempt(attempt.id)}
+                                className="px-3 py-1.5 rounded-lg font-bold text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+                              >
+                                Confirm Cancel
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => handleOpenReview(attempt)}
+                              className={`inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl font-bold text-xs shadow-sm transition-all hover:scale-[1.02] active:scale-[0.98] ${
+                                needsGrading
+                                  ? 'bg-purple-600 hover:bg-purple-700 text-white shadow-purple-500/25 ring-2 ring-purple-400/50'
+                                  : 'bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white'
+                              }`}
+                            >
                             <Eye className="w-3.5 h-3.5" />
-                            <span>{needsGrading ? 'Check & Grade Now' : 'Review Answers'}</span>
-                            <ArrowRight className="w-3.5 h-3.5 ml-0.5" />
-                          </button>
+                              <span>{needsGrading ? 'Check & Grade Now' : 'Review Answers'}</span>
+                              <ArrowRight className="w-3.5 h-3.5 ml-0.5" />
+                            </button>
+                          )}
                         </td>
                       </tr>
                     );
@@ -590,9 +646,10 @@ const SubmissionsManagement = () => {
                               </div>
 
                               {/* Question Text */}
-                              <p className="font-extrabold text-base sm:text-lg text-slate-900 dark:text-white mb-4 leading-relaxed">
-                                {ans.question_text}
-                              </p>
+                              <div 
+                                className="font-extrabold text-base sm:text-lg text-slate-900 dark:text-white mb-4 leading-relaxed prose dark:prose-invert max-w-none"
+                                dangerouslySetInnerHTML={{ __html: ans.question_text }}
+                              />
 
                               {/* Question Images */}
                               {ans.image_urls && ans.image_urls.length > 0 && (

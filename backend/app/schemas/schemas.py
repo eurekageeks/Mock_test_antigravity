@@ -163,6 +163,7 @@ class StudentTestStartResponse(BaseModel):
     questions: List[StudentQuestion]
     start_time: datetime
     time_remaining_seconds: int
+    warnings_count: int
 
 # ----------------- Student Answer Logging -----------------
 class AnswerSave(BaseModel):
@@ -201,6 +202,7 @@ class TestAttemptResponse(BaseSchema):
     student_mobile: Optional[str] = None
     subjective_questions_count: Optional[int] = 0
     pending_subjective_count: Optional[int] = 0
+    warnings_count: Optional[int] = 0
     result: Optional[ResultResponse] = None
 
 class ReviewAnswerResponse(BaseSchema):

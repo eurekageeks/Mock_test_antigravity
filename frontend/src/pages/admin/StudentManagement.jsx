@@ -144,12 +144,34 @@ const StudentManagement = () => {
     setAttemptsLoading(true);
     setAttempts([]);
     try {
-      const res = await api.get(`/api/admin/students/${student.id}/attempts`);
+      const res = await api.get(`/api/admin/users/${student.id}/attempts`);
       setAttempts(res.data);
     } catch (err) {
-      console.error("Failed to fetch student attempts:", err);
+      setMessage({ text: 'Failed to fetch exam attempts', type: 'error' });
     } finally {
       setAttemptsLoading(false);
+    }
+  };
+
+  const handleRestartAttempt = async (attemptId) => {
+    if (!window.confirm("Are you sure you want to RESTART this attempt? The student's warnings will be cleared and their test will be unlocked. Any previously generated scorecard for this attempt will be deleted.")) return;
+    try {
+      await api.post(`/api/admin/attempts/${attemptId}/restart`);
+      setMessage({ text: 'Attempt restarted successfully.', type: 'success' });
+      if (selectedStudent) handleViewAttempts(selectedStudent);
+    } catch (err) {
+      setMessage({ text: 'Failed to restart attempt.', type: 'error' });
+    }
+  };
+
+  const handleCancelAttempt = async (attemptId) => {
+    if (!window.confirm("Are you sure you want to CANCEL this attempt due to cheating? This cannot be easily undone by the student.")) return;
+    try {
+      await api.post(`/api/admin/attempts/${attemptId}/cancel`);
+      setMessage({ text: 'Attempt cancelled successfully.', type: 'success' });
+      if (selectedStudent) handleViewAttempts(selectedStudent);
+    } catch (err) {
+      setMessage({ text: 'Failed to cancel attempt.', type: 'error' });
     }
   };
 
@@ -454,8 +476,10 @@ const StudentManagement = () => {
                       </div>
                     </div>
 
-                    <div className="text-right">
-                      {attempt.result ? (
+                    <div className="text-right flex flex-col items-end gap-2">
+                      {attempt.status === 'cancelled_cheating' ? (
+                        <span className="text-xs font-bold text-red-500 bg-red-50 dark:bg-red-900/20 px-2 py-1 rounded">CANCELLED (CHEATING)</span>
+                      ) : attempt.result ? (
                         <>
                           <span className={`inline-block px-2 py-0.5 rounded text-[9px] font-bold ${
                             attempt.result.is_passed 
@@ -471,6 +495,21 @@ const StudentManagement = () => {
                       ) : (
                         <span className="text-xs font-bold text-amber-500">IN PROGRESS</span>
                       )}
+
+                      <div className="flex gap-2 mt-2">
+                        <button 
+                          onClick={() => handleRestartAttempt(attempt.id)}
+                          className="text-[10px] font-bold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-900/20 px-2 py-1 rounded hover:bg-brand-100 transition-colors"
+                        >
+                          RESTART
+                        </button>
+                        <button 
+                          onClick={() => handleCancelAttempt(attempt.id)}
+                          className="text-[10px] font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-2 py-1 rounded hover:bg-red-100 transition-colors"
+                        >
+                          CANCEL
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}

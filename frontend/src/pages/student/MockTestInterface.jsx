@@ -19,8 +19,50 @@ const MockTestInterface = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [showConfirmSubmit, setShowConfirmSubmit] = useState(false);
+  const [zoomedImage, setZoomedImage] = useState(null);
+  const [warningsCount, setWarningsCount] = useState(0);
+  const [showWarningModal, setShowWarningModal] = useState(false);
 
   const timerRef = useRef(null);
+
+  // Proctoring: Detect tab switch or minimize
+  useEffect(() => {
+    const handleVisibilityChange = async () => {
+      if (document.hidden && testInfo && !showWarningModal) {
+        handleViolation();
+      }
+    };
+    
+    const handleBlur = () => {
+      if (testInfo && !showWarningModal) {
+        handleViolation();
+      }
+    };
+
+    const handleViolation = async () => {
+      try {
+        const res = await api.post(`/api/student/attempts/${attempt_id}/warning`);
+        if (res.data.success) {
+          setWarningsCount(res.data.warnings_count);
+          if (res.data.status === 'cancelled_cheating') {
+             navigate(`/student/test-results/${attempt_id}`);
+          } else {
+             setShowWarningModal(true);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to log warning:", err);
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("blur", handleBlur);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("blur", handleBlur);
+    };
+  }, [testInfo, attempt_id, navigate, showWarningModal]);
 
   // 1. Fetch attempt questions and details
   useEffect(() => {
@@ -30,6 +72,7 @@ const MockTestInterface = () => {
         setTestInfo(res.data);
         setQuestions(res.data.questions);
         setTimeLeft(res.data.time_remaining_seconds);
+        setWarningsCount(res.data.warnings_count || 0);
         
         // Load initial answers already saved on database (handles resumes)
         const initialAnswers = {};
@@ -232,13 +275,20 @@ const MockTestInterface = () => {
         {/* Question Content */}
         <div className="flex-1 space-y-6">
           <div className="p-6 bg-white dark:bg-slate-800 rounded-3xl border border-slate-200/50 dark:border-slate-700/50 shadow-sm">
-            <p className="text-base sm:text-lg font-bold leading-relaxed whitespace-pre-line text-slate-900 dark:text-white">
-              {currentQuestion?.question_text}
-            </p>
+            <div 
+              className="text-base sm:text-lg font-bold leading-relaxed text-slate-900 dark:text-white prose dark:prose-invert max-w-none"
+              dangerouslySetInnerHTML={{ __html: currentQuestion?.question_text }}
+            />
             {currentQuestion?.image_urls && currentQuestion.image_urls.length > 0 && (
               <div className="mt-4 flex flex-wrap gap-4">
                 {currentQuestion.image_urls.map((url, idx) => (
-                  <img key={idx} src={getImageUrl(url)} alt={`Question image ${idx+1}`} className="max-w-full sm:max-w-md rounded-xl shadow border border-slate-200 dark:border-slate-700" />
+                  <img 
+                    key={idx} 
+                    src={getImageUrl(url)} 
+                    alt={`Question image ${idx+1}`} 
+                    className="max-w-full sm:max-w-md rounded-xl shadow border border-slate-200 dark:border-slate-700 cursor-zoom-in hover:opacity-90 transition-opacity" 
+                    onClick={() => setZoomedImage(getImageUrl(url))}
+                  />
                 ))}
               </div>
             )}
@@ -287,6 +337,25 @@ const MockTestInterface = () => {
               />
             </div>
           )}
+          
+          {/* Inline Save & Next / Submit Button */}
+          <div className="pt-4 flex justify-end">
+            {currentIdx === totalQuestions - 1 ? (
+              <button
+                onClick={() => setShowConfirmSubmit(true)}
+                className="inline-flex items-center px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl shadow-lg shadow-emerald-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 text-sm animate-pulse-slow"
+              >
+                Submit Test <Send className="ml-2 h-4 w-4" />
+              </button>
+            ) : (
+              <button
+                onClick={() => handleNavigate(currentIdx + 1)}
+                className="inline-flex items-center px-6 py-3 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-2xl shadow-lg shadow-brand-500/10 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 text-sm"
+              >
+                Save & Next <ChevronRight className="ml-1 h-5 w-5" />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Footer controls */}
@@ -445,6 +514,39 @@ const MockTestInterface = () => {
         </div>
       )}
 
+      {/* Zoom Modal */}
+      {zoomedImage && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/90 backdrop-blur-sm cursor-zoom-out animate-fade-in"
+          onClick={() => setZoomedImage(null)}
+        >
+          <img src={zoomedImage} alt="Zoomed reference" className="max-w-full max-h-[90vh] object-contain rounded-xl shadow-2xl animate-scale-up" />
+        </div>
+      )}
+
+      {/* Warning Modal */}
+      {showWarningModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-red-900/90 backdrop-blur-md animate-fade-in">
+          <div className="bg-white dark:bg-slate-800 rounded-3xl max-w-md w-full p-8 shadow-2xl text-center border-2 border-red-500 animate-scale-up">
+            <div className="w-20 h-20 bg-red-100 dark:bg-red-900/50 rounded-full flex items-center justify-center mx-auto mb-6">
+              <AlertTriangle className="h-10 w-10 text-red-600 dark:text-red-500 animate-pulse" />
+            </div>
+            <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-4">Warning: Tab Switch Detected</h2>
+            <p className="text-slate-600 dark:text-slate-300 mb-4 leading-relaxed font-medium">
+              You have navigated away from the exam window or opened another application. This is a violation of exam rules.
+            </p>
+            <p className="text-sm font-bold text-red-600 dark:text-red-400 mb-8 p-3 bg-red-50 dark:bg-red-900/20 rounded-xl">
+              Warning {warningsCount} of 3. If you do this again, your test will be automatically cancelled.
+            </p>
+            <button
+              onClick={() => setShowWarningModal(false)}
+              className="w-full py-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-2xl transition-all duration-200"
+            >
+              I Understand, Return to Test
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

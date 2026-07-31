@@ -288,33 +288,29 @@ const StudentDashboard = () => {
                     </div>
                     
                     <div className="flex items-center space-x-4">
-                      {attempt.result ? (
+                      {attempt.status === 'submitted' ? (
                         <div className="text-right">
-                          <span className={`inline-block px-2 py-0.5 rounded-lg text-[10px] font-bold ${
-                            attempt.pending_subjective_count > 0
-                              ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
-                              : attempt.result.is_passed 
-                                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' 
-                                : 'bg-red-500/10 text-red-600 dark:text-red-400'
-                          }`}>
-                            {attempt.pending_subjective_count > 0 ? 'PENDING' : (attempt.result.is_passed ? 'PASSED' : 'FAILED')}
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${attempt.result?.is_passed ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400' : 'bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400'}`}>
+                            {attempt.pending_subjective_count > 0 ? 'PENDING' : (attempt.result?.is_passed ? 'PASSED' : 'FAILED')}
                           </span>
                           <span className="block text-xs font-bold text-slate-700 dark:text-slate-300 mt-0.5">
-                            {attempt.result.score} Marks ({attempt.result.percentage}%)
+                            {attempt.result?.score || 0} Marks ({attempt.result?.percentage || 0}%)
                           </span>
                         </div>
+                      ) : attempt.status === 'cancelled_cheating' ? (
+                        <span className="text-xs font-bold text-red-500 bg-red-50 dark:bg-red-500/10 px-2 py-1 rounded">CANCELLED</span>
                       ) : (
                         <span className="text-xs font-bold text-amber-500">IN PROGRESS</span>
                       )}
-                      
-                      {attempt.status === 'submitted' && (
-                        <Link 
-                          to={`/student/test-results/${attempt.id}`}
-                          className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-750 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors"
-                        >
-                          <RotateCcw className="h-4 w-4" />
-                        </Link>
-                      )}
+                        
+                        {(attempt.status === 'submitted' || attempt.status === 'cancelled_cheating') && (
+                          <Link 
+                            to={`/student/test-results/${attempt.id}`}
+                            className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-750 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors"
+                          >
+                            <RotateCcw className="h-4 w-4" />
+                          </Link>
+                        )}
                     </div>
                   </div>
                 ))}

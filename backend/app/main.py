@@ -27,6 +27,12 @@ try:
         if "auto_calculate_marks" not in test_columns:
             conn.execute(text("ALTER TABLE mock_tests ADD COLUMN auto_calculate_marks BOOLEAN DEFAULT 1;"))
             
+        # Check test_attempts table
+        result_attempts = conn.execute(text("PRAGMA table_info(test_attempts);")).fetchall()
+        attempt_columns = [row[1] for row in result_attempts]
+        if "warnings_count" not in attempt_columns:
+            conn.execute(text("ALTER TABLE test_attempts ADD COLUMN warnings_count INTEGER NOT NULL DEFAULT 0;"))
+            
         # Migrate old image URLs in questions to include /api prefix
         conn.execute(text("""
             UPDATE questions 
