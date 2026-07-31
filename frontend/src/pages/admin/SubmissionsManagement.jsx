@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
-import { getImageUrl } from '../../utils/imageHelper';
+import { getImageUrl, processHtmlImages } from '../../utils/imageHelper';
 import { 
   ClipboardCheck, Search, Filter, CheckCircle2, XCircle, AlertCircle, 
   Clock, User, Award, FileText, ArrowRight, X, Loader2, RefreshCw, 
@@ -647,8 +647,8 @@ const SubmissionsManagement = () => {
 
                               {/* Question Text */}
                               <div 
-                                className="font-extrabold text-base sm:text-lg text-slate-900 dark:text-white mb-4 leading-relaxed prose dark:prose-invert max-w-none"
-                                dangerouslySetInnerHTML={{ __html: ans.question_text }}
+                                className="font-semibold text-slate-800 dark:text-slate-200 text-sm md:text-base leading-relaxed prose dark:prose-invert max-w-none"
+                                dangerouslySetInnerHTML={{ __html: processHtmlImages(ans.question_text) }}
                               />
 
                               {/* Question Images */}

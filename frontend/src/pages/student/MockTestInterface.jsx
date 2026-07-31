@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { Clock, AlertTriangle, ChevronLeft, ChevronRight, Send } from 'lucide-react';
-import { getImageUrl } from '../../utils/imageHelper';
+import { getImageUrl, processHtmlImages } from '../../utils/imageHelper';
 
 const MockTestInterface = () => {
   const { attempt_id } = useParams();
@@ -277,7 +277,7 @@ const MockTestInterface = () => {
           <div className="p-6 bg-white dark:bg-slate-800 rounded-3xl border border-slate-200/50 dark:border-slate-700/50 shadow-sm">
             <div 
               className="text-base sm:text-lg font-bold leading-relaxed text-slate-900 dark:text-white prose dark:prose-invert max-w-none"
-              dangerouslySetInnerHTML={{ __html: currentQuestion?.question_text }}
+              dangerouslySetInnerHTML={{ __html: processHtmlImages(currentQuestion?.question_text) }}
             />
             {currentQuestion?.image_urls && currentQuestion.image_urls.length > 0 && (
               <div className="mt-4 flex flex-wrap gap-4">

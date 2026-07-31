@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../../services/api';
-import { getImageUrl } from '../../utils/imageHelper';
+import { getImageUrl, processHtmlImages } from '../../utils/imageHelper';
 import SimpleEditor from '../../components/SimpleEditor';
 import {
   Plus, Edit3, Trash2, Copy, GripVertical, ChevronLeft,
@@ -695,7 +695,7 @@ Answer: B`}</pre>
                       </div>
                       <div 
                         className="font-bold text-sm text-slate-900 dark:text-white leading-relaxed line-clamp-3 prose dark:prose-invert max-w-none"
-                        dangerouslySetInnerHTML={{ __html: q.question_text }}
+                        dangerouslySetInnerHTML={{ __html: processHtmlImages(q.question_text) }}
                       />
                       <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold flex items-center flex-wrap gap-2.5">
                         <span>Correct Answer: <strong className="text-emerald-500">{q.correct_answer}</strong></span>

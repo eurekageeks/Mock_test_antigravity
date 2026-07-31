@@ -5,6 +5,7 @@ import {
   CheckCircle, XCircle, Award, Clock, FileText, ChevronRight, 
   HelpCircle, Home, RotateCcw, ShieldCheck, ShieldAlert
 } from 'lucide-react';
+import { processHtmlImages } from '../../utils/imageHelper';
 
 const TestResults = () => {
   const { attempt_id } = useParams();
@@ -196,7 +197,7 @@ const TestResults = () => {
                   {/* Question Text */}
                   <div 
                     className="font-bold text-slate-950 dark:text-white text-base leading-relaxed prose dark:prose-invert max-w-none"
-                    dangerouslySetInnerHTML={{ __html: ans.question_text }}
+                    dangerouslySetInnerHTML={{ __html: processHtmlImages(ans.question_text) }}
                   />
 
                   {/* Options List (only if MCQ) */}
