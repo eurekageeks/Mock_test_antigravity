@@ -694,13 +694,20 @@ Answer: B`}</pre>
                         </span>
                       </div>
                       <div 
-                        className="font-bold text-sm text-slate-900 dark:text-white leading-relaxed line-clamp-3 prose dark:prose-invert max-w-none"
+                        className="font-bold text-sm text-slate-900 dark:text-white leading-relaxed whitespace-pre-wrap prose dark:prose-invert max-w-none"
                         dangerouslySetInnerHTML={{ __html: processHtmlImages(q.question_text) }}
                       />
-                      <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold flex items-center flex-wrap gap-2.5">
-                        <span>Correct Answer: <strong className="text-emerald-500">{q.correct_answer}</strong></span>
+                      <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold space-y-2 pt-1 border-t border-slate-150 dark:border-slate-700/60">
+                        <div className="flex items-start gap-1.5 flex-wrap md:flex-nowrap">
+                          <span className="shrink-0 mt-1">Correct Answer:</span>
+                          <span className="font-mono whitespace-pre-wrap text-emerald-600 dark:text-emerald-400 font-bold bg-slate-50 dark:bg-slate-900/50 p-2.5 rounded-xl border border-slate-150 dark:border-slate-750/30 block w-full max-w-3xl">
+                            {q.correct_answer}
+                          </span>
+                        </div>
                         {q.type === 'mcq' && (
-                          <><span>•</span><span>{q.options?.length || 0} Options</span></>
+                          <div className="text-[10px] text-slate-400 font-bold pl-1">
+                            • {q.options?.length || 0} Options
+                          </div>
                         )}
                       </div>
                     </div>

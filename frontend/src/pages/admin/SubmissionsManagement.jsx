@@ -5,8 +5,9 @@ import {
   ClipboardCheck, Search, Filter, CheckCircle2, XCircle, AlertCircle, 
   Clock, User, Award, FileText, ArrowRight, X, Loader2, RefreshCw, 
   Eye, Check, HelpCircle, Calendar, ShieldAlert, Phone, Mail, Layers, 
-  BookOpen, UserCheck, AlertTriangle
+  BookOpen, UserCheck, AlertTriangle, Trash2
 } from 'lucide-react';
+import Swal from 'sweetalert2';
 
 const SubmissionsManagement = () => {
   const [attempts, setAttempts] = useState([]);
@@ -39,6 +40,72 @@ const SubmissionsManagement = () => {
     fetchAttempts();
   }, []);
 
+  const [selectedAttemptIds, setSelectedAttemptIds] = useState([]);
+
+  useEffect(() => {
+    setSelectedAttemptIds([]);
+  }, [statusFilter, searchTerm]);
+
+  const handleSelectAll = (e, filteredList) => {
+    if (e.target.checked) {
+      setSelectedAttemptIds(filteredList.map(a => a.id));
+    } else {
+      setSelectedAttemptIds([]);
+    }
+  };
+
+  const handleSelectAttempt = (id) => {
+    setSelectedAttemptIds(prev => 
+      prev.includes(id) ? prev.filter(aId => aId !== id) : [...prev, id]
+    );
+  };
+
+  const handleDeleteSingle = async (attemptId) => {
+    const result = await Swal.fire({
+      title: 'Delete Submission?',
+      text: "This will permanently delete this student submission/attempt and all associated answers. This cannot be undone.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Yes, delete it!'
+    });
+    if (!result.isConfirmed) return;
+
+    try {
+      await api.delete(`/api/admin/attempts/${attemptId}`);
+      showNotification('success', 'Submission deleted successfully.');
+      setSelectedAttemptIds(prev => prev.filter(id => id !== attemptId));
+      fetchAttempts();
+    } catch (err) {
+      console.error("Failed to delete submission:", err);
+      showNotification('error', 'Failed to delete submission.');
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    const result = await Swal.fire({
+      title: 'Delete Selected Submissions?',
+      text: `You are about to delete ${selectedAttemptIds.length} selected student submissions. This cannot be undone.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Yes, delete all!'
+    });
+    if (!result.isConfirmed) return;
+
+    try {
+      await api.post('/api/admin/attempts/bulk-delete', { attempt_ids: selectedAttemptIds });
+      showNotification('success', `Successfully deleted ${selectedAttemptIds.length} submissions.`);
+      setSelectedAttemptIds([]);
+      fetchAttempts();
+    } catch (err) {
+      console.error("Failed bulk delete:", err);
+      showNotification('error', 'Failed to delete selected submissions.');
+    }
+  };
+
   const showNotification = (type, message) => {
     setNotification({ type, message });
     setTimeout(() => setNotification(null), 4000);
@@ -66,7 +133,6 @@ const SubmissionsManagement = () => {
     // Refresh list to show updated scores
     fetchAttempts();
   };
-
   const handleGradeQuestion = async (questionId, isCorrect) => {
     if (!selectedAttempt) return;
     setGradingQuestionId(questionId);
@@ -81,7 +147,6 @@ const SubmissionsManagement = () => {
       setGradingQuestionId(null);
     }
   };
-
   const handleRestartAttempt = async (attemptId) => {
     if (!window.confirm("Are you sure you want to completely restart this test attempt? This will permanently delete the current attempt and allow the student to start fresh.")) return;
     try {
@@ -165,11 +230,11 @@ const SubmissionsManagement = () => {
                 <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
                   <span>Submissions & Violations Console</span>
                   <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-700">
-                    Grading & Alerts
+                    Submissions & Alerts
                   </span>
                 </h1>
                 <p className="text-slate-500 dark:text-slate-400 mt-0.5 text-sm">
-                  Showing subjective test submissions that need manual checking, and any tests flagged for cheating violations.
+                  Showing subjective test submissions, student responses, and any tests flagged for cheating violations.
                 </p>
               </div>
             </div>
@@ -208,11 +273,29 @@ const SubmissionsManagement = () => {
                     : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
                 }`}
               >
-                {filter === 'all' ? 'All Submissions' : filter === 'pending' ? '⏳ Needs Grading' : filter === 'graded' ? '✅ Evaluated' : '⚠️ Violations'}
+                {filter === 'all' ? 'All Submissions' : filter === 'pending' ? '⏳ Pending Review' : filter === 'graded' ? '✅ Reviewed' : '⚠️ Violations'}
               </button>
             ))}
           </div>
         </div>
+
+        {/* Bulk Actions Banner */}
+        {selectedAttemptIds.length > 0 && (
+          <div className="flex items-center justify-between bg-purple-50 dark:bg-purple-950/20 p-4 rounded-[24px] border border-purple-200 dark:border-purple-800/60 shadow-sm animate-fade-in">
+            <span className="text-sm font-bold text-purple-700 dark:text-purple-400">
+              {selectedAttemptIds.length} submission(s) selected
+            </span>
+            <div className="flex gap-2">
+              <button 
+                onClick={handleBulkDelete}
+                className="px-4 py-2 bg-rose-500 text-white rounded-xl text-xs font-bold hover:bg-rose-600 transition-colors flex items-center gap-1.5"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Delete Selected</span>
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Submissions List Table */}
         <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
@@ -236,6 +319,14 @@ const SubmissionsManagement = () => {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    <th className="py-4 px-6 w-12 text-center">
+                      <input
+                        type="checkbox"
+                        checked={filteredAttempts.length > 0 && selectedAttemptIds.length === filteredAttempts.length}
+                        onChange={(e) => handleSelectAll(e, filteredAttempts)}
+                        className="rounded border-slate-300 dark:border-slate-700 text-purple-600 focus:ring-purple-500 w-4 h-4 cursor-pointer"
+                      />
+                    </th>
                     <th className="py-4 px-6 font-semibold">Student Details</th>
                     <th className="py-4 px-6 font-semibold">Exam / Topic Being Checked</th>
                     <th className="py-4 px-6 font-semibold">Subjective Qs Status</th>
@@ -251,6 +342,14 @@ const SubmissionsManagement = () => {
                     
                     return (
                       <tr key={attempt.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-700/30 transition-colors">
+                        <td className="py-4 px-6 text-center">
+                          <input
+                            type="checkbox"
+                            checked={selectedAttemptIds.includes(attempt.id)}
+                            onChange={() => handleSelectAttempt(attempt.id)}
+                            className="rounded border-slate-300 dark:border-slate-700 text-purple-600 focus:ring-purple-500 w-4 h-4 cursor-pointer"
+                          />
+                        </td>
                         
                         {/* Student Details Column */}
                         <td className="py-4 px-6">
@@ -360,35 +459,44 @@ const SubmissionsManagement = () => {
 
                         {/* Action */}
                         <td className="py-4 px-6 text-right">
-                          {attempt.status === 'cancelled_cheating' ? (
-                            <div className="flex items-center justify-end gap-2">
-                              <button 
-                                onClick={() => handleRestartAttempt(attempt.id)}
-                                className="px-3 py-1.5 rounded-lg font-bold text-xs bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors"
+                          <div className="flex items-center justify-end gap-2">
+                            {attempt.status === 'cancelled_cheating' ? (
+                              <>
+                                <button 
+                                  onClick={() => handleRestartAttempt(attempt.id)}
+                                  className="px-3 py-1.5 rounded-lg font-bold text-xs bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors"
+                                >
+                                  Restart
+                                </button>
+                                <button 
+                                  onClick={() => handleCancelAttempt(attempt.id)}
+                                  className="px-3 py-1.5 rounded-lg font-bold text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+                                >
+                                  Confirm Cancel
+                                </button>
+                              </>
+                            ) : (
+                              <button
+                                onClick={() => handleOpenReview(attempt)}
+                                className={`inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl font-bold text-xs shadow-sm transition-all hover:scale-[1.02] active:scale-[0.98] ${
+                                  needsGrading
+                                    ? 'bg-purple-600 hover:bg-purple-700 text-white shadow-purple-500/25 ring-2 ring-purple-400/50'
+                                    : 'bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white'
+                                }`}
                               >
-                                Restart
+                                <Eye className="w-3.5 h-3.5" />
+                                <span>{needsGrading ? 'Check & Grade Now' : 'Review Answers'}</span>
+                                <ArrowRight className="w-3.5 h-3.5 ml-0.5" />
                               </button>
-                              <button 
-                                onClick={() => handleCancelAttempt(attempt.id)}
-                                className="px-3 py-1.5 rounded-lg font-bold text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
-                              >
-                                Confirm Cancel
-                              </button>
-                            </div>
-                          ) : (
+                            )}
                             <button
-                              onClick={() => handleOpenReview(attempt)}
-                              className={`inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl font-bold text-xs shadow-sm transition-all hover:scale-[1.02] active:scale-[0.98] ${
-                                needsGrading
-                                  ? 'bg-purple-600 hover:bg-purple-700 text-white shadow-purple-500/25 ring-2 ring-purple-400/50'
-                                  : 'bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white'
-                              }`}
+                              onClick={() => handleDeleteSingle(attempt.id)}
+                              className="p-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 dark:bg-rose-950/20 dark:text-rose-400 dark:hover:bg-rose-900/30 transition-all flex items-center justify-center"
+                              title="Delete Submission"
                             >
-                            <Eye className="w-3.5 h-3.5" />
-                              <span>{needsGrading ? 'Check & Grade Now' : 'Review Answers'}</span>
-                              <ArrowRight className="w-3.5 h-3.5 ml-0.5" />
+                              <Trash2 className="w-4 h-4" />
                             </button>
-                          )}
+                          </div>
                         </td>
                       </tr>
                     );
@@ -584,7 +692,7 @@ const SubmissionsManagement = () => {
                       </div>
                     </div>
 
-                    {/* Questions & Grading List */}
+                    {/* Questions & Answers List */}
                     <div className="space-y-5">
                       {reviewData.answers
                         .filter(ans => questionViewMode === 'all' || ans.question_type === 'text')
@@ -673,9 +781,9 @@ const SubmissionsManagement = () => {
                                 </div>
 
                                 {isSubjective ? (
-                                  <div className="text-sm sm:text-base text-slate-900 dark:text-slate-100 font-serif leading-relaxed italic bg-purple-50/50 dark:bg-purple-950/20 p-4 rounded-xl border-l-4 border-purple-600 shadow-sm">
+                                  <div className="text-sm sm:text-base text-slate-900 dark:text-slate-100 font-mono whitespace-pre-wrap leading-relaxed bg-purple-50/50 dark:bg-purple-950/20 p-4 rounded-xl border-l-4 border-purple-600 shadow-sm">
                                     {ans.text_answer ? (
-                                      `"${ans.text_answer}"`
+                                      ans.text_answer
                                     ) : (
                                       <span className="text-slate-400 not-italic font-sans">No paragraph response written by student.</span>
                                     )}
@@ -740,6 +848,7 @@ const SubmissionsManagement = () => {
                                   </button>
                                 </div>
                               </div>
+
                             </div>
                           );
                         })}

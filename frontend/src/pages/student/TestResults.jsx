@@ -238,9 +238,9 @@ const TestResults = () => {
                     <div className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-750/30 text-xs space-y-2">
                       <div>
                         <span className="text-slate-400 block mb-0.5">Your Submitted Text Answer:</span>
-                        <span className={`font-semibold ${ans.is_correct ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-700 dark:text-slate-300'}`}>
+                        <div className={`font-mono whitespace-pre-wrap p-3 rounded-lg bg-white dark:bg-slate-800 border ${ans.is_correct ? 'text-emerald-600 dark:text-emerald-400 border-emerald-500/20' : 'text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'}`}>
                           {ans.text_answer || <span className="italic text-red-500">Unanswered</span>}
-                        </span>
+                        </div>
                       </div>
                       <div className="border-t border-slate-200/50 dark:border-slate-800 pt-2">
                         <span className="text-slate-400 block mb-0.5">Expected Answer:</span>

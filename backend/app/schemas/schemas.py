@@ -262,3 +262,6 @@ class BulkQuestionUpdateMarks(BaseModel):
     question_ids: Optional[List[int]] = None
     marks: float = Field(..., gt=0)
 
+class BulkAttemptDelete(BaseModel):
+    attempt_ids: List[int]
+

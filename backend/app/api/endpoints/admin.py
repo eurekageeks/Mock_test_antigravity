@@ -12,7 +12,8 @@ from app.schemas.schemas import (
     AdminDashboardStats, UserResponse, StudentStatusUpdate, TestAttemptResponse,
     TopicCreate, TopicResponse, MockTestCreate, MockTestResponse,
     QuestionCreate, QuestionResponse, QuestionReorder,
-    BulkQuestionDelete, BulkQuestionUpdateMarks, AttemptDetailReviewResponse
+    BulkQuestionDelete, BulkQuestionUpdateMarks, AttemptDetailReviewResponse,
+    BulkAttemptDelete
 )
 from app.api.deps import get_admin_user
 from app.api.endpoints.student import submit_attempt_internal
@@ -805,3 +806,32 @@ def cancel_student_attempt(
     attempt.end_time = datetime.utcnow()
     db.commit()
     return {"success": True, "message": "Test attempt cancelled successfully."}
+
+@router.delete("/attempts/{attempt_id}")
+def delete_student_attempt(
+    attempt_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_admin_user)
+):
+    attempt = db.query(TestAttempt).filter(TestAttempt.id == attempt_id).first()
+    if not attempt:
+        raise HTTPException(status_code=404, detail="Test attempt not found.")
+        
+    db.delete(attempt)
+    db.commit()
+    return {"success": True, "message": "Test attempt deleted successfully."}
+
+@router.post("/attempts/bulk-delete")
+def bulk_delete_student_attempts(
+    payload: BulkAttemptDelete,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_admin_user)
+):
+    if not payload.attempt_ids:
+        raise HTTPException(status_code=400, detail="No attempt IDs provided.")
+        
+    attempts = db.query(TestAttempt).filter(TestAttempt.id.in_(payload.attempt_ids)).all()
+    for attempt in attempts:
+        db.delete(attempt)
+    db.commit()
+    return {"success": True, "message": f"Successfully deleted {len(payload.attempt_ids)} test attempts."}
