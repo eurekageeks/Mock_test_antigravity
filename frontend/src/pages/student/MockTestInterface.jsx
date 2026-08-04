@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { Clock, AlertTriangle, ChevronLeft, ChevronRight, Send } from 'lucide-react';
 import { getImageUrl, processHtmlImages } from '../../utils/imageHelper';
+import Swal from 'sweetalert2';
 
 const MockTestInterface = () => {
   const { attempt_id } = useParams();
@@ -63,6 +64,37 @@ const MockTestInterface = () => {
       window.removeEventListener("blur", handleBlur);
     };
   }, [testInfo, attempt_id, navigate, showWarningModal]);
+
+  // Prevent back button and page exit/refresh
+  useEffect(() => {
+    // Prevent refresh or tab close
+    const handleBeforeUnload = (e) => {
+      e.preventDefault();
+      e.returnValue = 'Are you sure you want to leave? Your exam progress will be lost.';
+      return e.returnValue;
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    // Prevent browser back button
+    window.history.pushState(null, null, window.location.href);
+    const handlePopState = (e) => {
+      window.history.pushState(null, null, window.location.href);
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'warning',
+        title: 'Back button navigation is disabled during exams!',
+        showConfirmButton: false,
+        timer: 3000
+      });
+    };
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
 
   // 1. Fetch attempt questions and details
   useEffect(() => {
@@ -328,7 +360,7 @@ const MockTestInterface = () => {
             <div className="space-y-3">
               <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider">Your Answer</label>
               <textarea
-                rows={5}
+                rows={12}
                 value={localAnswers[currentQuestion.id]?.text_answer || ''}
                 onChange={(e) => handleTextChange(currentQuestion.id, e.target.value)}
                 onBlur={() => handleTextBlur(currentQuestion.id)}

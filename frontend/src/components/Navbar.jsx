@@ -36,19 +36,32 @@ const Navbar = () => {
         : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
     }`;
 
+  const isTakingTest = location.pathname.startsWith('/student/test-attempt/');
+
   return (
     <nav className="sticky top-0 z-50 glass-premium border-b border-slate-200/50 dark:border-slate-800/50 text-slate-800 dark:text-white transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2 group">
-            <div className="bg-gradient-to-tr from-brand-600 to-brand-400 p-2 rounded-xl text-white shadow-md shadow-brand-500/20 group-hover:scale-105 transition-transform duration-200">
-              <GraduationCap className="h-6 w-6" />
+          {isTakingTest ? (
+            <div className="flex items-center space-x-2">
+              <div className="bg-gradient-to-tr from-brand-600 to-brand-400 p-2 rounded-xl text-white shadow-md shadow-brand-500/20">
+                <GraduationCap className="h-6 w-6" />
+              </div>
+              <span className="font-extrabold text-xl tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
+                A1TIEXAM<span className="text-brand-500">PRISM</span>
+              </span>
             </div>
-            <span className="font-extrabold text-xl tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
-              A1TIEXAM<span className="text-brand-500">PRISM</span>
-            </span>
-          </Link>
+          ) : (
+            <Link to="/" className="flex items-center space-x-2 group">
+              <div className="bg-gradient-to-tr from-brand-600 to-brand-400 p-2 rounded-xl text-white shadow-md shadow-brand-500/20 group-hover:scale-105 transition-transform duration-200">
+                <GraduationCap className="h-6 w-6" />
+              </div>
+              <span className="font-extrabold text-xl tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
+                A1TIEXAM<span className="text-brand-500">PRISM</span>
+              </span>
+            </Link>
+          )}
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-4">
@@ -63,8 +76,15 @@ const Navbar = () => {
               </>
             )}
 
+            {/* Exam Mode active info */}
+            {isTakingTest && (
+              <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-black bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 animate-pulse">
+                🔒 EXAM MODE ACTIVE
+              </span>
+            )}
+
             {/* Student Navigation */}
-            {user && user.role === 'student' && (
+            {user && user.role === 'student' && !isTakingTest && (
               <>
                 <Link to="/student/dashboard" className={linkClass('/student/dashboard')}>Dashboard</Link>
                 <Link to="/student/tests" className={linkClass('/student/tests')}>Mock Tests</Link>
@@ -103,7 +123,13 @@ const Navbar = () => {
               {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </button>
 
-            {user ? (
+            {isTakingTest ? (
+              <div className="flex items-center space-x-2 border-l border-slate-200 dark:border-slate-800 pl-3">
+                <span className="text-sm font-semibold max-w-[120px] truncate text-amber-600 dark:text-amber-450">
+                  ✍️ {user?.name}
+                </span>
+              </div>
+            ) : user ? (
               <div className="flex items-center space-x-3 border-l border-slate-200 dark:border-slate-800 pl-3">
                 <span className="text-sm font-medium max-w-[120px] truncate text-slate-700 dark:text-slate-200">
                   {user.name}
@@ -135,20 +161,28 @@ const Navbar = () => {
           </div>
 
           {/* Mobile hamburger menu button */}
-          <div className="md:hidden flex items-center space-x-2">
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
-            >
-              {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-            </button>
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
-            >
-              {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </button>
-          </div>
+          {isTakingTest ? (
+            <div className="md:hidden flex items-center">
+              <span className="text-xs font-bold text-amber-600 px-2.5 py-1 bg-amber-500/10 rounded-full border border-amber-500/20 animate-pulse">
+                🔒 EXAM MODE ACTIVE
+              </span>
+            </div>
+          ) : (
+            <div className="md:hidden flex items-center space-x-2">
+              <button
+                onClick={toggleTheme}
+                className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+              >
+                {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              </button>
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+              >
+                {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, ForeignKey, Text, Table, JSON
+from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, ForeignKey, Text, Table, JSON, LargeBinary
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.core.database import Base
@@ -152,5 +152,13 @@ class Result(Base):
     wrong_count = Column(Integer, nullable=False)
     rank = Column(Integer, nullable=True)
     
-    # Relationships
     attempt = relationship("TestAttempt", back_populates="result")
+
+class UploadedImage(Base):
+    __tablename__ = "uploaded_images"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    filename = Column(String(255), unique=True, index=True, nullable=False)
+    content_type = Column(String(100), nullable=False)
+    data = Column(LargeBinary, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)

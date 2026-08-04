@@ -5,7 +5,7 @@ import {
   ClipboardCheck, Search, Filter, CheckCircle2, XCircle, AlertCircle, 
   Clock, User, Award, FileText, ArrowRight, X, Loader2, RefreshCw, 
   Eye, Check, HelpCircle, Calendar, ShieldAlert, Phone, Mail, Layers, 
-  BookOpen, UserCheck, AlertTriangle, Trash2
+  BookOpen, UserCheck, AlertTriangle, Trash2, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 
@@ -41,9 +41,12 @@ const SubmissionsManagement = () => {
   }, []);
 
   const [selectedAttemptIds, setSelectedAttemptIds] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
 
   useEffect(() => {
     setSelectedAttemptIds([]);
+    setCurrentPage(1);
   }, [statusFilter, searchTerm]);
 
   const handleSelectAll = (e, filteredList) => {
@@ -202,6 +205,8 @@ const SubmissionsManagement = () => {
       return dateString;
     }
   };
+  const totalPages = Math.ceil(filteredAttempts.length / itemsPerPage);
+  const paginatedAttempts = filteredAttempts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   return (
     <div className="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen p-6 sm:p-8 transition-colors duration-300">
@@ -315,7 +320,8 @@ const SubmissionsManagement = () => {
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <>
+              <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">
@@ -335,7 +341,7 @@ const SubmissionsManagement = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60 text-sm">
-                  {filteredAttempts.map((attempt) => {
+                  {paginatedAttempts.map((attempt) => {
                     const hasResult = attempt.result && attempt.result.score !== null;
                     const isPassed = attempt.result && attempt.result.is_passed;
                     const needsGrading = attempt.pending_subjective_count > 0;
@@ -504,6 +510,35 @@ const SubmissionsManagement = () => {
                 </tbody>
               </table>
             </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-slate-105 dark:border-slate-700/50 bg-slate-50/30 dark:bg-slate-900/20">
+                <span className="text-xs text-slate-500 dark:text-slate-400">
+                  Showing <strong className="text-slate-800 dark:text-white">{(currentPage - 1) * itemsPerPage + 1}</strong> to <strong className="text-slate-800 dark:text-white">{Math.min(currentPage * itemsPerPage, filteredAttempts.length)}</strong> of <strong className="text-slate-800 dark:text-white">{filteredAttempts.length}</strong> submissions
+                </span>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold disabled:opacity-40 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center"
+                  >
+                    <ChevronLeft className="h-3.5 w-3.5 mr-1" /> Previous
+                  </button>
+                  <span className="px-3 py-1 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-xl text-xs font-bold">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  <button
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold disabled:opacity-40 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center"
+                  >
+                    Next <ChevronRight className="h-3.5 w-3.5 ml-1" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
           )}
         </div>
 
