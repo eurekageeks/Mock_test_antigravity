@@ -4,52 +4,45 @@ import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { 
   Play, BookOpen, ShieldCheck, Cpu, Code, Activity, Users,
-  ChevronDown, ChevronUp, ChevronRight, Mail, Phone, MapPin, Search,
-  ArrowRight, Star, HelpCircle, FileText, Award, Clock
+  Search, ArrowRight, Star, FileText, Award, Clock,
+  GraduationCap, TrendingUp, Trophy, Target, Zap, ChevronRight,
+  BookMarked, BrainCircuit, Building2, Layers, ChevronDown, CheckCircle, Lightbulb, MapPin, Phone, Mail, Check
 } from 'lucide-react';
 
-const sliderImages = [
-  { src: "/hero_students.jpg", alt: "Students taking online mock test illustration" },
-  { src: "/slider_exam.jpg", alt: "College students focused on taking online technical exam" },
-  { src: "/slider_dashboard.jpg", alt: "Sleek digital dashboard showing exam performance" }
-];
-
-const LandingPage = () => {
+export default function LandingPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  
+  const [topics, setTopics] = useState([]);
+  const [tests, setTests] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [activeFaq, setActiveFaq] = useState(null);
   const [currentSlide, setCurrentSlide] = useState(0);
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % sliderImages.length);
-    }, 4000);
-    return () => clearInterval(timer);
-  }, []);
+  const heroImages = [
+    "/hero_students.jpg",
+    "/slider_exam.jpg",
+    "/slider_dashboard.jpg"
+  ];
 
-  const navigate = useNavigate();
-  const [tests, setTests] = useState([]);
-  const [topics, setTopics] = useState([]);
-  const [loading, setLoading] = useState(true);
-  
-  // FAQ state
-  const [openFaq, setOpenFaq] = useState(null);
-  
-  // Contact Form state
-  const [contactName, setContactName] = useState('');
-  const [contactEmail, setContactEmail] = useState('');
-  const [contactMessage, setContactMessage] = useState('');
-  const [contactSuccess, setContactSuccess] = useState(false);
+  useEffect(() => {
+    const sliderInterval = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % heroImages.length);
+    }, 5000);
+    return () => clearInterval(sliderInterval);
+  }, [heroImages.length]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [testsRes, topicsRes] = await Promise.all([
-          api.get('/api/student/tests'),
-          api.get('/api/student/topics')
+        const [topRes, testRes] = await Promise.all([
+          api.get('/api/student/topics'),
+          api.get('/api/student/tests')
         ]);
-        setTests(testsRes.data.slice(0, 6)); // Display top 6
-        setTopics(topicsRes.data);
+        setTopics(topRes.data || []);
+        setTests(testRes.data || []);
       } catch (err) {
-        console.error("Failed to load landing page data:", err);
+        console.error("Failed to load topics/tests:", err);
       } finally {
         setLoading(false);
       }
@@ -57,378 +50,342 @@ const LandingPage = () => {
     fetchData();
   }, []);
 
-  const handleContactSubmit = (e) => {
-    e.preventDefault();
-    setContactSuccess(true);
-    setContactName('');
-    setContactEmail('');
-    setContactMessage('');
-    setTimeout(() => setContactSuccess(false), 5000);
-  };
-
-  const toggleFaq = (index) => {
-    setOpenFaq(openFaq === index ? null : index);
-  };
-
   const faqs = [
-    {
-      q: "How do I sign up and start taking exams?",
-      a: "Simply click the 'Sign Up' button, fill in your details, and submit. To keep A1TIExamPrism secure, all student accounts start as 'Pending' and must be approved by our administrator before you can log in. Approval typically takes less than an hour."
-    },
-    {
-      q: "Are the mock tests timed?",
-      a: "Yes! Every mock test has a set duration configured by the creator. A live countdown timer is displayed during the exam interface, and the backend will automatically grade and submit your work once the timer runs out."
-    },
-    {
-      q: "What types of questions are supported?",
-      a: "A1TIExamPrism supports two main question types: Multiple Choice Questions (MCQs) with single options, and Text Answer Questions where you write out your expected response to match the answer criteria."
-    },
-    {
-      q: "Can I review my past test performance?",
-      a: "Absolutely! Once your attempt is submitted, you can view your score, passing status, percentage, correct/wrong count, and complete question reviews detailing the expected answers and explanatory notes."
-    },
-    {
-      q: "Is there any fee to register on A1TIExamPrism?",
-      a: "No, registration and basic assessments are free. Organizations can seed custom tests and topics through our administrative dashboard."
-    }
+    { q: "How do I prepare for the coding exam?", a: "Practice regularly with our curated coding problems and mock tests tailored for your exam." },
+    { q: "Are the mock tests free?", a: "We offer both free mock tests and premium tests that come with detailed analytics." },
+    { q: "What topics are covered in the exams?", a: "We cover a wide range of topics including Programming, DevOps, Cloud Computing, and Aptitude." },
+    { q: "Can I access the platform on mobile?", a: "Yes, our platform is fully responsive and can be accessed on any mobile device." },
+    { q: "Is there any support if I get stuck?", a: "Our AI Tutor and community forums are available 24/7 to help you with any doubts." }
   ];
 
-  return (
-    <div className="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen transition-colors duration-300">
-      
-      {/* 1. Hero Section */}
-      <section className="relative overflow-hidden pt-12 pb-20 sm:pb-28 lg:pt-20">
-        {/* Background Gradients */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[600px] pointer-events-none opacity-20 dark:opacity-30">
-          <div className="absolute top-[-10%] left-[-10%] w-[50%] aspect-square rounded-full bg-brand-400 blur-[120px]"></div>
-          <div className="absolute bottom-[20%] right-[-10%] w-[45%] aspect-square rounded-full bg-blue-500 blur-[120px]"></div>
-        </div>
+  const toggleFaq = (index) => {
+    if (activeFaq === index) {
+      setActiveFaq(null);
+    } else {
+      setActiveFaq(index);
+    }
+  };
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="lg:grid lg:grid-cols-12 lg:gap-12 items-center">
+  return (
+    <div className="bg-[#F8FAFC] min-h-screen text-slate-900 font-sans">
+      
+      {/* ─── HERO SECTION ─── */}
+      <section className="relative pt-28 pb-20 lg:pt-36 lg:pb-24 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-[#EBF4FA] to-transparent z-0"></div>
+        
+        <div className="container relative z-10 mx-auto px-6 max-w-7xl">
+          <div className="flex flex-col lg:flex-row items-center gap-12">
             
-            {/* Left Content */}
-            <div className="sm:text-center md:max-w-2xl md:mx-auto lg:col-span-6 lg:text-left animate-slide-up">
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-brand-500/10 text-brand-600 dark:text-brand-400 mb-6">
-                🔥 Empowering Future Technologists
-              </span>
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-none text-slate-900 dark:text-white">
-                Accelerate Your Exam Preparation with <span className="bg-gradient-to-r from-brand-500 to-blue-600 bg-clip-text text-transparent">A1TIExam<span className="text-purple-500">Prism</span></span>
+            <div className="flex-1 space-y-8 text-center lg:text-left">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 text-blue-600 text-xs font-bold uppercase tracking-wider">
+                <SparklesIcon className="w-3 h-3" />
+                Empowering Future Technologists
+              </div>
+              
+              <h1 className="text-4xl lg:text-6xl font-black tracking-tight leading-tight text-slate-900">
+                Accelerate Your Exam<br/>
+                Preparation with<br/>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-purple-600">
+                  A1TIExamPrism
+                </span>
               </h1>
-              <p className="mt-6 text-lg sm:text-xl text-slate-600 dark:text-slate-300 font-medium">
+              
+              <p className="text-lg text-slate-600 max-w-xl mx-auto lg:mx-0 leading-relaxed">
                 A premium, AI-ready full-stack mock testing platform to evaluate, grade, and sharpen your technical skills. Attempt real-time mock tests on programming, cloud computing, and DevOps.
               </p>
               
-              <div className="mt-10 sm:flex sm:justify-center lg:justify-start gap-4">
-                {user ? (
-                  <Link
-                    to={user.role === 'admin' ? '/admin/dashboard' : '/student/dashboard'}
-                    className="flex items-center justify-center px-8 py-4 border border-transparent text-base font-bold rounded-2xl text-white bg-brand-600 hover:bg-brand-700 shadow-lg shadow-brand-500/25 hover:shadow-brand-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
-                  >
-                    Go to Dashboard <ArrowRight className="ml-2 h-5 w-5" />
-                  </Link>
-                ) : (
-                  <>
-                    <Link
-                      to="/register"
-                      className="flex items-center justify-center px-8 py-4 border border-transparent text-base font-bold rounded-2xl text-white bg-brand-600 hover:bg-brand-700 shadow-lg shadow-brand-500/25 hover:shadow-brand-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
-                    >
-                      Get Started <ArrowRight className="ml-2 h-5 w-5" />
-                    </Link>
-                    <a
-                      href="#tests"
-                      className="mt-3 sm:mt-0 flex items-center justify-center px-8 py-4 border border-slate-300 dark:border-slate-700 text-base font-bold rounded-2xl text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all duration-200"
-                    >
-                      Explore Tests
-                    </a>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Right Illustration Slider */}
-            <div className="mt-12 lg:mt-0 lg:col-span-6 animate-fade-in animate-delay-100">
-              <div className="relative mx-auto w-full max-w-lg lg:max-w-none rounded-3xl overflow-hidden glass p-3 border border-white/20 shadow-2xl dark:shadow-slate-950/50">
-                <div className="w-full rounded-2xl overflow-hidden h-[300px] sm:h-[400px] lg:h-[450px] relative bg-slate-100 dark:bg-slate-800">
-                  {sliderImages.map((img, idx) => (
-                    <img
-                      key={idx}
-                      src={img.src}
-                      alt={img.alt}
-                      className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out ${idx === currentSlide ? 'opacity-100' : 'opacity-0'}`}
-                    />
-                  ))}
-                  {/* Pagination Dots */}
-                  <div className="absolute bottom-4 left-0 right-0 flex justify-center space-x-2 z-10">
-                    {sliderImages.map((_, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => setCurrentSlide(idx)}
-                        className={`h-2.5 w-2.5 rounded-full transition-all duration-300 ${idx === currentSlide ? 'bg-white w-6' : 'bg-white/50 hover:bg-white/80'}`}
-                      />
-                    ))}
-                  </div>
-                </div>
+              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-4">
+                <button 
+                  onClick={() => navigate(user ? '/student/dashboard' : '/login')}
+                  className="px-8 py-4 bg-[#0284C7] hover:bg-[#0369A1] text-white rounded-full font-bold transition-all shadow-lg hover:shadow-xl hover:-translate-y-1 w-full sm:w-auto"
+                >
+                  Get Started →
+                </button>
+                <button 
+                  onClick={() => navigate('/catalog')}
+                  className="px-8 py-4 bg-white border border-slate-200 hover:border-slate-300 text-slate-700 rounded-full font-bold transition-all shadow-sm hover:shadow-md hover:-translate-y-1 w-full sm:w-auto"
+                >
+                  Explore Tests
+                </button>
               </div>
             </div>
             
+            <div className="flex-1 relative">
+              <div className="absolute inset-0 bg-blue-200 blur-[100px] opacity-40 rounded-full"></div>
+              <div className="relative z-10 w-full rounded-3xl shadow-2xl border-4 border-white aspect-[4/3] max-h-[500px] overflow-hidden group">
+                {heroImages.map((img, idx) => (
+                  <img 
+                    key={idx}
+                    src={img} 
+                    alt={`Hero slide ${idx + 1}`} 
+                    className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${currentSlide === idx ? 'opacity-100' : 'opacity-0'}`}
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = "https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&q=80&w=800";
+                    }}
+                  />
+                ))}
+                
+                {/* Slider Dots */}
+                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2">
+                  {heroImages.map((_, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setCurrentSlide(idx)}
+                      className={`w-3 h-3 rounded-full transition-all ${currentSlide === idx ? 'bg-white scale-125' : 'bg-white/50 hover:bg-white/80'}`}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* 2. Popular Topics Section */}
-      <section className="py-16 bg-slate-100/50 dark:bg-slate-900/30 border-y border-slate-200/50 dark:border-slate-800/50 transition-colors duration-300">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-10">
-            <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white">Popular Test Topics</h2>
-            <p className="mt-4 text-lg text-slate-500 dark:text-slate-400">
-              Brush up on hot industry domains. Browse practice materials curated for key technical disciplines.
-            </p>
+      {/* ─── POPULAR TEST TOPICS ─── */}
+      <section className="py-20 bg-white">
+        <div className="container mx-auto px-6 max-w-7xl">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-black text-slate-900 mb-4">Popular Test Topics</h2>
+            <p className="text-slate-500">Explore our comprehensive curriculum tailored to your technical skills.</p>
           </div>
-          
-          {loading ? (
-            <div className="flex justify-center space-x-2">
-              <div className="h-3 w-3 bg-brand-500 rounded-full animate-bounce"></div>
-              <div className="h-3 w-3 bg-brand-500 rounded-full animate-bounce animate-delay-100"></div>
-              <div className="h-3 w-3 bg-brand-500 rounded-full animate-bounce animate-delay-200"></div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {topics.map((t) => (
+
+          <div className="flex flex-wrap justify-center gap-4">
+            {loading ? (
+              <div className="w-full text-center text-slate-400">Loading topics...</div>
+            ) : topics.length > 0 ? (
+              topics.map(topic => (
                 <div 
-                  key={t.id}
-                  className="p-5 text-center bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/50 dark:border-slate-700/50 shadow-sm hover:shadow-md hover:scale-[1.03] transition-all duration-200 cursor-pointer"
-                  onClick={() => navigate('/login')}
+                  key={`test-${topic.id}`}
+                  onClick={() => navigate('/catalog')}
+                  className="px-6 py-4 bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md hover:border-[#0284C7] cursor-pointer transition-all flex flex-col items-center justify-center min-w-[200px] group"
                 >
-                  <span className="font-bold text-lg text-slate-900 dark:text-white">{t.name}</span>
-                  <p className="text-xs text-slate-500 mt-1 line-clamp-2">{t.description || "Browse mock practice exams."}</p>
+                  <h3 className="font-bold text-slate-800 text-center group-hover:text-[#0284C7]">{topic.name}</h3>
+                  <p className="text-xs text-slate-400 text-center mt-2 line-clamp-1 max-w-[150px]">{topic.description || "Practice Questions"}</p>
                 </div>
-              ))}
-            </div>
-          )}
+              ))
+            ) : (
+              <div className="w-full text-center text-slate-400">No topics available.</div>
+            )}
+          </div>
         </div>
       </section>
 
-      {/* 3. Mock Tests Section */}
-      <section id="tests" className="py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-14">
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white">Featured Practice Exams</h2>
-            <p className="mt-4 text-lg text-slate-500 dark:text-slate-400">
-              Ready to test your limits? Log in to attempt any of our featured published exams.
-            </p>
+      {/* ─── POPULAR TEST LEARNING ─── */}
+      <section className="py-20 bg-white border-t border-slate-100">
+        <div className="container mx-auto px-6 max-w-7xl">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-black text-slate-900 mb-4">Popular Test Learning</h2>
+            <p className="text-slate-500">Master new concepts with our curated learning paths and video lessons.</p>
           </div>
 
-          {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {[1, 2, 3].map((s) => (
-                <div key={s} className="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-200 dark:border-slate-700 animate-pulse h-[240px]"></div>
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {tests.length > 0 ? (
-                tests.map((test) => (
-                  <div 
-                    key={test.id} 
-                    className="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-200/60 dark:border-slate-800 hover:border-brand-500/50 dark:hover:border-brand-500/50 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
-                  >
-                    <div>
-                      <div className="flex items-center space-x-2 mb-4">
-                        <span className="inline-block px-3 py-1 rounded-xl text-xs font-semibold bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400">
-                          {test.topic_name || "General"}
-                        </span>
-                        <span className={`inline-flex px-2 py-0.5 rounded text-[9px] font-black uppercase ${
-                          test.has_subjective 
-                            ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400' 
-                            : 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
-                        }`}>
-                          {test.has_subjective ? 'SUBJECTIVE' : 'OBJECTIVE'}
-                        </span>
-                      </div>
-                      <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">{test.title}</h3>
-                      <p className="text-sm text-slate-500 dark:text-slate-400 mb-4 line-clamp-3">{test.description}</p>
-                    </div>
-                    <div>
-                      <div className="flex items-center justify-between text-xs font-semibold text-slate-400 mb-4 border-t border-slate-100 dark:border-slate-700/50 pt-4">
-                        <span className="flex items-center"><Clock className="h-4.5 w-4.5 mr-1 text-slate-400" /> {test.duration_minutes} Mins</span>
-                        <span className="flex items-center"><FileText className="h-4.5 w-4.5 mr-1 text-slate-400" /> {test.question_count} Qs</span>
-                        <span className="flex items-center"><Award className="h-4.5 w-4.5 mr-1 text-slate-400" /> {test.total_marks} Marks</span>
-                      </div>
-                      <Link 
-                        to="/login"
-                        className="w-full inline-flex items-center justify-center py-3 px-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 font-semibold rounded-2xl transition-all duration-200 text-sm"
-                      >
-                        Attempt Test <ArrowRight className="ml-2 h-4 w-4" />
-                      </Link>
-                    </div>
+          <div className="flex flex-wrap justify-center gap-4">
+            {loading ? (
+              <div className="w-full text-center text-slate-400">Loading learning paths...</div>
+            ) : topics.length > 0 ? (
+              topics.map(topic => (
+                <div 
+                  key={`learning-${topic.id}`}
+                  onClick={() => navigate('/catalog')}
+                  className="px-6 py-4 bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md hover:border-[#0284C7] cursor-pointer transition-all flex flex-col items-center justify-center min-w-[200px] group"
+                >
+                  <h3 className="font-bold text-slate-800 text-center group-hover:text-[#0284C7]">{topic.name}</h3>
+                  <p className="text-xs text-slate-400 text-center mt-2 line-clamp-1 max-w-[150px]">{topic.description || "Interactive Lessons"}</p>
+                </div>
+              ))
+            ) : (
+              <div className="w-full text-center text-slate-400">No learning paths available.</div>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── FEATURED PRACTICE EXAMS ─── */}
+      <section className="py-20 bg-[#F8FAFC]">
+        <div className="container mx-auto px-6 max-w-7xl">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-black text-slate-900 mb-4">Featured Practice Exams</h2>
+            <p className="text-slate-500">Test your skills with our top mock exams across various domains.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {loading ? (
+              <div className="col-span-full text-center text-slate-400">Loading exams...</div>
+            ) : tests.length > 0 ? (
+              tests.slice(0, 6).map((test) => (
+                <div 
+                  key={test.id}
+                  className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-lg transition-all flex flex-col group"
+                >
+                  <div className="flex items-center gap-2 mb-4">
+                    <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-bold border border-blue-100 uppercase tracking-wide">
+                      {test.topic_name || "Assessment"}
+                    </span>
+                    <span className="px-3 py-1 bg-amber-50 text-amber-600 rounded-full text-xs font-bold border border-amber-100">
+                      {test.status === 'published' ? 'Active' : 'Draft'}
+                    </span>
                   </div>
-                ))
-              ) : (
-                <div className="col-span-3 text-center py-10 bg-slate-100 dark:bg-slate-800/30 rounded-3xl border border-dashed border-slate-200 dark:border-slate-700">
-                  <p className="text-slate-500 dark:text-slate-400 font-semibold">No mock tests available currently. Seed the database to view sample tests!</p>
+                  
+                  <h3 className="text-xl font-bold text-slate-900 mb-2 line-clamp-2">{test.title}</h3>
+                  <p className="text-slate-500 text-sm mb-6 line-clamp-2 flex-1">
+                    {test.description || "Evaluate your readiness with this comprehensive mock test."}
+                  </p>
+                  
+                  <div className="flex items-center justify-between text-xs font-semibold text-slate-500 mb-6 pt-4 border-t border-slate-100">
+                    <span className="flex items-center gap-1"><Clock size={14}/> {test.duration_minutes} mins</span>
+                    <span className="flex items-center gap-1"><FileText size={14}/> {test.question_count || 0} Qs</span>
+                    <span className="flex items-center gap-1"><Target size={14}/> {test.total_marks} Marks</span>
+                  </div>
+                  
+                  <button 
+                    onClick={() => navigate(user ? `/student/test/${test.id}/start` : '/login')}
+                    className="w-full py-3 bg-slate-50 hover:bg-[#0284C7] text-slate-700 hover:text-white rounded-xl font-bold transition-colors border border-slate-200 hover:border-transparent text-sm"
+                  >
+                    Start Exam →
+                  </button>
                 </div>
-              )}
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* 4. Why Choose A1tiExam */}
-      <section id="features" className="py-20 bg-slate-100/50 dark:bg-slate-900/40 transition-colors duration-300">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white">Why Choose A1TIExamPrism?</h2>
-            <p className="mt-4 text-lg text-slate-500 dark:text-slate-400">
-              We provide a modern platform built with high security standards, responsive interfaces, and full features.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="p-8 bg-white dark:bg-slate-800 rounded-3xl border border-slate-200/50 dark:border-slate-700/50 shadow-sm hover:shadow-md transition-all duration-200">
-              <div className="bg-brand-500/10 dark:bg-brand-500/20 text-brand-600 dark:text-brand-400 p-4 rounded-2xl w-14 h-14 flex items-center justify-center mb-6">
-                <ShieldCheck className="h-8 w-8" />
-              </div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3">Backend Timer Enforcement</h3>
-              <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-sm">
-                No cheating. The count-down timer is strictly synced and verified by our backend server, auto-submitting attempts the moment limit expires.
-              </p>
-            </div>
-
-            <div className="p-8 bg-white dark:bg-slate-800 rounded-3xl border border-slate-200/50 dark:border-slate-700/50 shadow-sm hover:shadow-md transition-all duration-200">
-              <div className="bg-brand-500/10 dark:bg-brand-500/20 text-brand-600 dark:text-brand-400 p-4 rounded-2xl w-14 h-14 flex items-center justify-center mb-6">
-                <Cpu className="h-8 w-8" />
-              </div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3">Two Core Question Formats</h3>
-              <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-sm">
-                Supports Multiple Choice Questions (MCQ) for rapid testing and free-form Text Answer input graded automatically based on expected keywords.
-              </p>
-            </div>
-
-            <div className="p-8 bg-white dark:bg-slate-800 rounded-3xl border border-slate-200/50 dark:border-slate-700/50 shadow-sm hover:shadow-md transition-all duration-200">
-              <div className="bg-brand-500/10 dark:bg-brand-500/20 text-brand-600 dark:text-brand-400 p-4 rounded-2xl w-14 h-14 flex items-center justify-center mb-6">
-                <Award className="h-8 w-8" />
-              </div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3">Detailed Answer Explanations</h3>
-              <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-sm">
-                Don't just verify scores. Get in-depth reviews after grading to see correct answer mappings and detailed text explanations of core concepts.
-              </p>
-            </div>
+              ))
+            ) : (
+              <div className="col-span-full text-center text-slate-400">No exams available.</div>
+            )}
           </div>
         </div>
       </section>
 
-      {/* 5. Platform Statistics */}
-      <section id="stats" className="py-20 bg-gradient-to-tr from-brand-900 to-brand-700 text-white relative">
-        <div className="absolute inset-0 bg-grid-pattern opacity-10"></div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            <div>
-              <span className="block text-4xl sm:text-5xl font-black mb-2">15,000+</span>
-              <span className="text-brand-100 font-semibold uppercase tracking-wider text-xs">Total Students</span>
-            </div>
-            <div>
-              <span className="block text-4xl sm:text-5xl font-black mb-2">50,000+</span>
-              <span className="text-brand-100 font-semibold uppercase tracking-wider text-xs">Exams Attempted</span>
-            </div>
-            <div>
-              <span className="block text-4xl sm:text-5xl font-black mb-2">99.8%</span>
-              <span className="text-brand-100 font-semibold uppercase tracking-wider text-xs">Platform Uptime</span>
-            </div>
-            <div>
-              <span className="block text-4xl sm:text-5xl font-black mb-2">200+</span>
-              <span className="text-brand-100 font-semibold uppercase tracking-wider text-xs">Verified Mock Tests</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 6. Testimonials */}
-      <section id="testimonials" className="py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white">Trusted by Thousands of Students</h2>
-            <p className="mt-4 text-lg text-slate-500 dark:text-slate-400">
-              Read how candidates cracked their job placements using the A1TIExamPrism engine.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="p-6 bg-slate-100/50 dark:bg-slate-800 rounded-3xl border border-slate-200/30 dark:border-slate-700/30">
-              <div className="flex items-center space-x-1 text-yellow-400 mb-4">
-                {[1, 2, 3, 4, 5].map((st) => <Star key={st} className="h-4.5 w-4.5 fill-current" />)}
-              </div>
-              <p className="text-slate-600 dark:text-slate-300 italic text-sm leading-relaxed mb-6">
-                "The Live Timer feature made me feel like I was in a real exam room. It automatically submitted when I was typing my last answer, and grading was immediate!"
-              </p>
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-full bg-brand-500 text-white font-bold flex items-center justify-center">SK</div>
-                <div>
-                  <h4 className="font-bold text-sm text-slate-950 dark:text-white">Siddharth Kumar</h4>
-                  <span className="text-xs text-slate-400">AWS Certified Practitioner</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="p-6 bg-slate-100/50 dark:bg-slate-800 rounded-3xl border border-slate-200/30 dark:border-slate-700/30">
-              <div className="flex items-center space-x-1 text-yellow-400 mb-4">
-                {[1, 2, 3, 4, 5].map((st) => <Star key={st} className="h-4.5 w-4.5 fill-current" />)}
-              </div>
-              <p className="text-slate-600 dark:text-slate-300 italic text-sm leading-relaxed mb-6">
-                "The skills popup reminder kept reminding me to finish my student profile. Once I set up Docker as my skill, I could view tailored Docker tests on my feed."
-              </p>
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-full bg-blue-500 text-white font-bold flex items-center justify-center">AR</div>
-                <div>
-                  <h4 className="font-bold text-sm text-slate-950 dark:text-white">Anjali Roy</h4>
-                  <span className="text-xs text-slate-400">DevOps Student</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="p-6 bg-slate-100/50 dark:bg-slate-800 rounded-3xl border border-slate-200/30 dark:border-slate-700/30">
-              <div className="flex items-center space-x-1 text-yellow-400 mb-4">
-                {[1, 2, 3, 4, 5].map((st) => <Star key={st} className="h-4.5 w-4.5 fill-current" />)}
-              </div>
-              <p className="text-slate-600 dark:text-slate-300 italic text-sm leading-relaxed mb-6">
-                "Simple, responsive interface that matches premium look of popular educational systems like Unacademy. The light/dark mode switch is buttery smooth."
-              </p>
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-full bg-emerald-500 text-white font-bold flex items-center justify-center">JD</div>
-                <div>
-                  <h4 className="font-bold text-sm text-slate-950 dark:text-white">John Doe</h4>
-                  <span className="text-xs text-slate-400">Java Developer Candidate</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 7. FAQ Section */}
-      <section id="faq" className="py-20 bg-slate-100/50 dark:bg-slate-900/40 transition-colors duration-300">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6">
+      {/* ─── WHY CHOOSE US ─── */}
+      <section className="py-20 bg-white">
+        <div className="container mx-auto px-6 max-w-7xl">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white">Frequently Asked Questions</h2>
-            <p className="mt-4 text-slate-500 dark:text-slate-400">Need help? Read answers to common developer queries.</p>
+            <h2 className="text-3xl font-black text-slate-900 mb-4">Why Choose A1TIExamPrism?</h2>
+            <p className="text-slate-500 max-w-2xl mx-auto">Our platform offers a robust and comprehensive environment tailored to your learning and test-taking needs.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow text-center">
+              <div className="w-16 h-16 mx-auto bg-blue-50 text-blue-500 rounded-2xl flex items-center justify-center mb-6">
+                <ShieldCheck size={32} />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-4">Real-world Exam Environment</h3>
+              <p className="text-slate-500 text-sm leading-relaxed">Experience a true-to-life exam interface with strictly timed tests and anti-cheating mechanisms to fully prepare you for the actual test day.</p>
+            </div>
+            
+            <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow text-center">
+              <div className="w-16 h-16 mx-auto bg-purple-50 text-purple-500 rounded-2xl flex items-center justify-center mb-6">
+                <FileText size={32} />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-4">Comprehensive Test Formats</h3>
+              <p className="text-slate-500 text-sm leading-relaxed">Engage with various question types ranging from multiple choice to subjective questions covering diverse topics efficiently and effectively.</p>
+            </div>
+
+            <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow text-center">
+              <div className="w-16 h-16 mx-auto bg-emerald-50 text-emerald-500 rounded-2xl flex items-center justify-center mb-6">
+                <Lightbulb size={32} />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-4">Detailed Performance Analytics</h3>
+              <p className="text-slate-500 text-sm leading-relaxed">After every test, get a comprehensive analysis of your performance to identify weak areas and track your growth over time easily.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── STATS SECTION ─── */}
+      <section className="py-16 bg-[#0B5C95] text-white">
+        <div className="container mx-auto px-6 max-w-7xl">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center divide-x divide-white/20">
+            <div>
+              <div className="text-4xl lg:text-5xl font-black mb-2">15,000+</div>
+              <div className="text-blue-200 text-sm font-semibold uppercase tracking-wider">Active Learners</div>
+            </div>
+            <div>
+              <div className="text-4xl lg:text-5xl font-black mb-2">50,000+</div>
+              <div className="text-blue-200 text-sm font-semibold uppercase tracking-wider">Mock Tests Attempted</div>
+            </div>
+            <div>
+              <div className="text-4xl lg:text-5xl font-black mb-2">99.8%</div>
+              <div className="text-blue-200 text-sm font-semibold uppercase tracking-wider">Success Rate</div>
+            </div>
+            <div>
+              <div className="text-4xl lg:text-5xl font-black mb-2">200+</div>
+              <div className="text-blue-200 text-sm font-semibold uppercase tracking-wider">Topics & Domains</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── TESTIMONIALS ─── */}
+      <section className="py-20 bg-[#F8FAFC]">
+        <div className="container mx-auto px-6 max-w-7xl">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-black text-slate-900 mb-4">Trusted by Thousands of Students</h2>
+            <p className="text-slate-500">Hear from our successful alumni who aced their exams using A1TIExamPrism.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm relative">
+              <div className="flex text-amber-400 mb-4 gap-1">
+                <Star size={18} fill="currentColor"/> <Star size={18} fill="currentColor"/> <Star size={18} fill="currentColor"/> <Star size={18} fill="currentColor"/> <Star size={18} fill="currentColor"/>
+              </div>
+              <p className="text-slate-600 mb-8 italic">"The real-world exam environment on A1TIExamPrism was a game changer for me. It helped me overcome my exam anxiety and perform at my best."</p>
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xl">S</div>
+                <div>
+                  <h4 className="font-bold text-slate-900">Sarah Jenkins</h4>
+                  <p className="text-xs text-slate-500">Placed at Microsoft</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm relative">
+              <div className="flex text-amber-400 mb-4 gap-1">
+                <Star size={18} fill="currentColor"/> <Star size={18} fill="currentColor"/> <Star size={18} fill="currentColor"/> <Star size={18} fill="currentColor"/> <Star size={18} fill="currentColor"/>
+              </div>
+              <p className="text-slate-600 mb-8 italic">"The detailed performance analytics helped me pinpoint exactly what topics I needed to focus on. Highly recommended for comprehensive preparation!"</p>
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-bold text-xl">A</div>
+                <div>
+                  <h4 className="font-bold text-slate-900">Ankit Roy</h4>
+                  <p className="text-xs text-slate-500">Software Engineer</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm relative">
+              <div className="flex text-amber-400 mb-4 gap-1">
+                <Star size={18} fill="currentColor"/> <Star size={18} fill="currentColor"/> <Star size={18} fill="currentColor"/> <Star size={18} fill="currentColor"/> <Star size={18} fill="currentColor"/>
+              </div>
+              <p className="text-slate-600 mb-8 italic">"A1TIExamPrism's coding interface is incredibly robust. Practicing mock tests here felt exactly like my actual technical interview."</p>
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 font-bold text-xl">M</div>
+                <div>
+                  <h4 className="font-bold text-slate-900">Meera Iyer</h4>
+                  <p className="text-xs text-slate-500">Full Stack Developer</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── FAQ ─── */}
+      <section className="py-20 bg-white">
+        <div className="container mx-auto px-6 max-w-3xl">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-black text-slate-900 mb-4">Frequently Asked Questions</h2>
+            <p className="text-slate-500">Find quick answers to common questions about our platform.</p>
           </div>
 
           <div className="space-y-4">
             {faqs.map((faq, idx) => (
-              <div 
-                key={idx} 
-                className="bg-white dark:bg-slate-800 border border-slate-200/50 dark:border-slate-700/50 rounded-2xl overflow-hidden shadow-sm transition-all duration-300"
-              >
-                <button
+              <div key={idx} className="border border-slate-200 rounded-xl overflow-hidden">
+                <button 
                   onClick={() => toggleFaq(idx)}
-                  className="w-full flex items-center justify-between p-6 text-left focus:outline-none"
+                  className="w-full flex items-center justify-between p-6 bg-white hover:bg-slate-50 transition-colors text-left font-bold text-slate-800"
                 >
-                  <span className="font-bold text-slate-900 dark:text-white">{faq.q}</span>
-                  {openFaq === idx ? <ChevronUp className="h-5 w-5 text-brand-500" /> : <ChevronDown className="h-5 w-5 text-slate-400" />}
+                  {faq.q}
+                  <ChevronDown className={`transform transition-transform ${activeFaq === idx ? 'rotate-180 text-[#0284C7]' : 'text-slate-400'}`} size={20} />
                 </button>
-                
-                {openFaq === idx && (
-                  <div className="p-6 pt-0 border-t border-slate-100 dark:border-slate-700/50 text-slate-600 dark:text-slate-400 text-sm leading-relaxed animate-fade-in">
+                {activeFaq === idx && (
+                  <div className="p-6 pt-0 bg-white text-slate-600 leading-relaxed border-t border-slate-100">
                     {faq.a}
                   </div>
                 )}
@@ -438,94 +395,56 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* 8. Contact Section */}
-      <section id="contact" className="py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-white dark:bg-slate-800 border border-slate-200/60 dark:border-slate-800 rounded-[32px] shadow-xl dark:shadow-slate-950/20 overflow-hidden lg:grid lg:grid-cols-12">
+      {/* ─── CONTACT ─── */}
+      <section className="py-20 bg-[#F8FAFC]">
+        <div className="container mx-auto px-6 max-w-5xl">
+          <div className="bg-white rounded-3xl shadow-xl overflow-hidden flex flex-col md:flex-row border border-slate-100">
             
-            {/* Contact details */}
-            <div className="lg:col-span-5 bg-gradient-to-tr from-brand-900 to-brand-600 text-white p-8 sm:p-12 flex flex-col justify-between">
+            {/* Contact Info (Blue Box) */}
+            <div className="md:w-2/5 bg-[#0B5C95] p-12 text-white flex flex-col justify-between">
               <div>
-                <h2 className="text-3xl font-extrabold mb-4">Contact Info</h2>
-                <p className="text-brand-100 text-sm leading-relaxed mb-10">
-                  Have questions about custom licensing, API access, or administrator settings? Drop us a line.
+                <h3 className="text-2xl font-black mb-4">Contact Info</h3>
+                <p className="text-blue-100 mb-12 text-sm leading-relaxed">
+                  Have questions or need assistance? Reach out to us using the details below. We are always here to help you succeed!
                 </p>
-                
+
                 <div className="space-y-6">
-                  <div className="flex items-center space-x-4">
-                    <Mail className="h-6 w-6 text-brand-200" />
-                    <span className="text-sm font-medium">a1training167@gmail.com</span>
+                  <div className="flex items-center gap-4">
+                    <Mail className="text-blue-300 flex-shrink-0" size={20} />
+                    <a href="mailto:a1training167@gmail.com" className="font-bold text-sm hover:underline">a1training167@gmail.com</a>
                   </div>
-                  <div className="flex items-center space-x-4">
-                    <Phone className="h-6 w-6 flex-shrink-0 text-brand-200" />
-                    <span className="text-sm font-medium">+91 83689 79712 / +91 63804 86914</span>
+                  <div className="flex items-center gap-4">
+                    <Phone className="text-blue-300 flex-shrink-0" size={20} />
+                    <p className="font-bold text-sm">+91 83689 79712 / +91 63804 86914</p>
                   </div>
-                  <div className="flex items-start space-x-4">
-                    <MapPin className="h-6 w-6 flex-shrink-0 text-brand-200 mt-1" />
-                    <span className="text-sm font-medium leading-relaxed">
-                      C-167, Omicron 1, 6% Abadi, Greater Noida <br />
+                  <div className="flex items-start gap-4">
+                    <MapPin className="mt-1 text-blue-300 flex-shrink-0" size={20} />
+                    <div className="font-bold text-sm leading-relaxed">
+                      C-167, Omicron 1, 6% Abadi, Greater Noida<br/>
                       Earthcon Sanskriti, Sector 1, Greater Noida West
-                    </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-              
-              <div className="mt-12 text-xs text-brand-200">
-                A1TIExamPrism Support team is available 24/7.
               </div>
             </div>
 
             {/* Contact Form */}
-            <div className="lg:col-span-7 p-8 sm:p-12">
-              <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-6">Send Us a Message</h3>
-              
-              {contactSuccess && (
-                <div className="p-4 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl mb-6 font-semibold text-sm">
-                  Success! Your message was sent. Our team will get back to you shortly.
-                </div>
-              )}
-              
-              <form onSubmit={handleContactSubmit} className="space-y-6">
+            <div className="md:w-3/5 p-12">
+              <h3 className="text-2xl font-black text-slate-900 mb-8">Send Us a Message</h3>
+              <form className="space-y-6">
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Name</label>
-                  <input
-                    type="text"
-                    required
-                    value={contactName}
-                    onChange={(e) => setContactName(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm"
-                    placeholder="Enter your name"
-                  />
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Name</label>
+                  <input type="text" placeholder="Your full name" className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#0284C7] focus:border-transparent outline-none transition-all" />
                 </div>
-                
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Email Address</label>
-                  <input
-                    type="email"
-                    required
-                    value={contactEmail}
-                    onChange={(e) => setContactEmail(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm"
-                    placeholder="name@example.com"
-                  />
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Email Address</label>
+                  <input type="email" placeholder="you@example.com" className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#0284C7] focus:border-transparent outline-none transition-all" />
                 </div>
-                
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Message</label>
-                  <textarea
-                    required
-                    rows={4}
-                    value={contactMessage}
-                    onChange={(e) => setContactMessage(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm"
-                    placeholder="How can we help you?"
-                  />
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Message</label>
+                  <textarea placeholder="How can we help you?" rows="4" className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#0284C7] focus:border-transparent outline-none transition-all resize-none"></textarea>
                 </div>
-                
-                <button
-                  type="submit"
-                  className="w-full py-4 px-6 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-2xl shadow-lg shadow-brand-500/10 hover:shadow-brand-500/25 transition-all duration-200"
-                >
+                <button type="button" className="w-full py-4 bg-[#0284C7] hover:bg-[#0369A1] text-white rounded-xl font-bold transition-colors shadow-lg hover:shadow-xl">
                   Send Message
                 </button>
               </form>
@@ -535,8 +454,21 @@ const LandingPage = () => {
         </div>
       </section>
 
+      {/* ─── FOOTER ─── */}
+      <footer className="py-8 text-center text-slate-500 text-sm border-t border-slate-200 bg-white">
+        &copy; {new Date().getFullYear()} A1TIExamPrism - Careers & Community. All rights reserved.
+      </footer>
+
     </div>
   );
-};
+}
 
-export default LandingPage;
+const SparklesIcon = (props) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
+    <path d="M5 3v4"/>
+    <path d="M19 17v4"/>
+    <path d="M3 5h4"/>
+    <path d="M17 19h4"/>
+  </svg>
+)

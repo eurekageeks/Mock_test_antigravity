@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { BarChart, User, Layers, BookOpen, Database, LogOut, ShieldCheck, ChevronRight, ClipboardCheck } from 'lucide-react';
+import { BarChart, User, Layers, BookOpen, Database, LogOut, ShieldCheck, ChevronRight, ClipboardCheck, GraduationCap } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import Navbar from './Navbar';
 import Footer from './Footer';
@@ -57,6 +57,13 @@ const AdminLayout = ({ children }) => {
       icon: ClipboardCheck,
       iconColor: 'text-purple-500',
       activeBg: 'bg-purple-600 text-white shadow-lg shadow-purple-500/25',
+    },
+    {
+      label: 'LMS Content',
+      path: '/admin/learning',
+      icon: GraduationCap,
+      iconColor: 'text-blue-500',
+      activeBg: 'bg-blue-600 text-white shadow-lg shadow-blue-500/25',
     },
     {
       label: 'Backup & Restore',

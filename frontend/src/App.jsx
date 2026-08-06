@@ -18,6 +18,7 @@ import StudentAttempts from './pages/student/StudentAttempts';
 import MockTestStartConfirmation from './pages/student/MockTestStartConfirmation';
 import MockTestInterface from './pages/student/MockTestInterface';
 import TestResults from './pages/student/TestResults';
+import LessonViewer from './pages/student/LessonViewer';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -27,6 +28,8 @@ import MockTestManagement from './pages/admin/MockTestManagement';
 import QuestionManagement from './pages/admin/QuestionManagement';
 import BackupManagement from './pages/admin/BackupManagement';
 import SubmissionsManagement from './pages/admin/SubmissionsManagement';
+import LearningManagement from './pages/admin/LearningManagement';
+import PublicCatalog from './pages/PublicCatalog';
 
 // Route Guard Components
 const RequireAuth = ({ children, requiredRole }) => {
@@ -161,6 +164,14 @@ const AppRoutes = () => {
         </RequireAuth>
       } />
 
+      {/* ─── Public Catalog & Lessons ─── */}
+      <Route path="/catalog" element={
+        <WithNavbarOnly><PublicCatalog /></WithNavbarOnly>
+      } />
+      
+      <Route path="/lesson/:lessonId" element={
+        <WithNavbarOnly><LessonViewer /></WithNavbarOnly>
+      } />
       {/* ─── Admin Routes ─── */}
       <Route path="/admin/dashboard" element={
         <RequireAuth requiredRole="admin">
@@ -177,6 +188,12 @@ const AppRoutes = () => {
       <Route path="/admin/topics" element={
         <RequireAuth requiredRole="admin">
           <AdminLayout><TopicManagement /></AdminLayout>
+        </RequireAuth>
+      } />
+
+      <Route path="/admin/learning" element={
+        <RequireAuth requiredRole="admin">
+          <AdminLayout><LearningManagement /></AdminLayout>
         </RequireAuth>
       } />
 

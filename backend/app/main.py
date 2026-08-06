@@ -5,7 +5,7 @@ import os
 import mimetypes
 from app.core.config import settings
 from app.core.database import engine, Base, SessionLocal
-from app.api.endpoints import auth, student, admin, backup, upload
+from app.api.endpoints import auth, student, admin, backup, upload, learning_admin, learning_student
 from app.seed import seed_data
 
 # Initialize the database tables on startup
@@ -73,7 +73,8 @@ app.include_router(student.router, prefix="/api/student", tags=["Student Panel"]
 app.include_router(admin.router, prefix="/api/admin", tags=["Admin Panel"])
 app.include_router(backup.router, prefix="/api/admin/backup", tags=["Admin Backup & Restore"])
 app.include_router(upload.router, prefix="/api/upload", tags=["Uploads"])
-
+app.include_router(learning_admin.router, prefix="/api/admin/learning", tags=["Learning Admin"])
+app.include_router(learning_student.router, prefix="/api/student/learning", tags=["Learning Student"])
 from app.models.models import UploadedImage
 
 @app.get("/api/uploads/{filename}")

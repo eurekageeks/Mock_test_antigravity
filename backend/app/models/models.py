@@ -58,6 +58,7 @@ class Topic(Base):
     
     # Relationships
     tests = relationship("MockTest", back_populates="topic", cascade="all, delete-orphan")
+    lessons = relationship("LearningLesson", back_populates="topic", cascade="all, delete-orphan")
 
 class MockTest(Base):
     __tablename__ = "mock_tests"
@@ -162,3 +163,33 @@ class UploadedImage(Base):
     content_type = Column(String(100), nullable=False)
     data = Column(LargeBinary, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+
+# ==========================================
+# AI LEARNING ECOSYSTEM (LMS) MODELS
+# ==========================================
+
+class LearningLesson(Base):
+    __tablename__ = "learning_lessons"
+    id = Column(Integer, primary_key=True, index=True)
+    topic_id = Column(Integer, ForeignKey("topics.id", ondelete="CASCADE"), nullable=False)
+    title = Column(String(255), nullable=False)
+    description = Column(Text, nullable=True)
+    content_html = Column(Text, nullable=True)  # Rich text content
+    video_url = Column(String(500), nullable=True) # Embedded YouTube or other URL
+    image_url = Column(String(500), nullable=True) # Lesson thumbnail image
+    estimated_time_minutes = Column(Integer, default=10)
+    order_index = Column(Integer, default=0)
+    is_published = Column(Boolean, default=True)
+    mock_test_id = Column(Integer, ForeignKey("mock_tests.id", ondelete="SET NULL"), nullable=True)
+    
+    topic = relationship("Topic", back_populates="lessons")
+
+class StudentProgress(Base):
+    __tablename__ = "student_progress"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    lesson_id = Column(Integer, ForeignKey("learning_lessons.id", ondelete="CASCADE"), nullable=False)
+    is_completed = Column(Boolean, default=False)
+    time_spent_seconds = Column(Integer, default=0)
+    last_accessed = Column(DateTime, default=datetime.utcnow)

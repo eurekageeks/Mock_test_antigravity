@@ -4,6 +4,7 @@ import api from '../../services/api';
 import { Clock, AlertTriangle, ChevronLeft, ChevronRight, Send } from 'lucide-react';
 import { getImageUrl, processHtmlImages } from '../../utils/imageHelper';
 import Swal from 'sweetalert2';
+import ZoomPanModal from '../../components/ZoomPanModal';
 
 const MockTestInterface = () => {
   const { attempt_id } = useParams();
@@ -310,6 +311,11 @@ const MockTestInterface = () => {
             <div 
               className="text-base sm:text-lg font-bold leading-relaxed text-slate-900 dark:text-white prose dark:prose-invert max-w-none"
               dangerouslySetInnerHTML={{ __html: processHtmlImages(currentQuestion?.question_text) }}
+              onClick={(e) => {
+                if (e.target.tagName === 'IMG') {
+                  setZoomedImage(e.target.src);
+                }
+              }}
             />
             {currentQuestion?.image_urls && currentQuestion.image_urls.length > 0 && (
               <div className="mt-4 flex flex-wrap gap-4">
@@ -348,7 +354,17 @@ const MockTestInterface = () => {
                     }`}>
                       {opt.option_key}
                     </span>
-                    <span className="text-sm">{opt.option_text}</span>
+                    <div 
+                      className="text-sm prose dark:prose-invert max-w-none inline"
+                      dangerouslySetInnerHTML={{ __html: processHtmlImages(opt.option_text) }}
+                      onClick={(e) => {
+                        // Prevent the click from triggering option selection if they just clicked an image to zoom
+                        if (e.target.tagName === 'IMG') {
+                          e.stopPropagation();
+                          setZoomedImage(e.target.src);
+                        }
+                      }}
+                    />
                   </button>
                 );
               })}
@@ -371,52 +387,31 @@ const MockTestInterface = () => {
           )}
           
           {/* Inline Save & Next / Submit Button */}
-          <div className="pt-4 flex justify-end">
+          <div className="pt-4 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-200/50 dark:border-slate-700/50 shadow-sm mt-8">
+            <button
+              onClick={() => handleNavigate(currentIdx - 1)}
+              disabled={currentIdx === 0}
+              className="inline-flex items-center px-5 py-3 border border-slate-300 dark:border-slate-700 text-sm font-bold rounded-xl text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 disabled:opacity-30 transition-all duration-200"
+            >
+              <ChevronLeft className="h-5 w-5 mr-1" /> Previous
+            </button>
             {currentIdx === totalQuestions - 1 ? (
               <button
                 onClick={() => setShowConfirmSubmit(true)}
-                className="inline-flex items-center px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl shadow-lg shadow-emerald-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 text-sm animate-pulse-slow"
+                className="inline-flex items-center px-8 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg shadow-emerald-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 text-sm animate-pulse-slow"
               >
                 Submit Test <Send className="ml-2 h-4 w-4" />
               </button>
             ) : (
               <button
                 onClick={() => handleNavigate(currentIdx + 1)}
-                className="inline-flex items-center px-6 py-3 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-2xl shadow-lg shadow-brand-500/10 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 text-sm"
+                className="inline-flex items-center px-8 py-3 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl shadow-lg shadow-brand-500/10 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 text-sm"
               >
                 Save & Next <ChevronRight className="ml-1 h-5 w-5" />
               </button>
             )}
           </div>
         </div>
-
-        {/* Footer controls */}
-        <div className="flex items-center justify-between border-t border-slate-200/50 dark:border-slate-800/50 pt-6 mt-8">
-          <button
-            onClick={() => handleNavigate(currentIdx - 1)}
-            disabled={currentIdx === 0}
-            className="inline-flex items-center px-5 py-3 border border-slate-300 dark:border-slate-700 text-sm font-bold rounded-2xl text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 disabled:opacity-30 transition-all duration-200"
-          >
-            <ChevronLeft className="h-5 w-5 mr-1" /> Previous
-          </button>
-          
-          {currentIdx === totalQuestions - 1 ? (
-            <button
-              onClick={() => setShowConfirmSubmit(true)}
-              className="inline-flex items-center px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl shadow-lg shadow-emerald-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 text-sm animate-pulse-slow"
-            >
-              Submit Test <Send className="ml-2 h-4 w-4" />
-            </button>
-          ) : (
-            <button
-              onClick={() => handleNavigate(currentIdx + 1)}
-              className="inline-flex items-center px-6 py-3 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-2xl shadow-lg shadow-brand-500/10 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 text-sm"
-            >
-              Save & Next <ChevronRight className="ml-1 h-5 w-5" />
-            </button>
-          )}
-        </div>
-
       </div>
 
       {/* RIGHT COLUMN: Live Timer & Question Navigation Grid (4 cols) */}
@@ -546,14 +541,9 @@ const MockTestInterface = () => {
         </div>
       )}
 
-      {/* Zoom Modal */}
+      {/* Zoom & Pan Modal */}
       {zoomedImage && (
-        <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/90 backdrop-blur-sm cursor-zoom-out animate-fade-in"
-          onClick={() => setZoomedImage(null)}
-        >
-          <img src={zoomedImage} alt="Zoomed reference" className="max-w-full max-h-[90vh] object-contain rounded-xl shadow-2xl animate-scale-up" />
-        </div>
+        <ZoomPanModal imageUrl={zoomedImage} onClose={() => setZoomedImage(null)} />
       )}
 
       {/* Warning Modal */}
