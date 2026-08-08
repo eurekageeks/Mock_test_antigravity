@@ -1,44 +1,90 @@
-import React, { useRef, useEffect } from 'react';
-import { Bold, Italic, Underline, List } from 'lucide-react';
+import React, { useRef } from 'react';
+import ReactQuill from 'react-quill-new';
+import 'react-quill-new/dist/quill.snow.css';
 
-export default function SimpleEditor({ value, onChange, className }) {
+export default function SimpleEditor({ value, onChange, className, placeholder = "Start typing..." }) {
   const editorRef = useRef(null);
 
-  useEffect(() => {
-    if (editorRef.current && editorRef.current.innerHTML !== value) {
-      editorRef.current.innerHTML = value || '';
-    }
-  }, [value]);
-
-  const handleInput = () => {
-    if (editorRef.current) {
-      onChange(editorRef.current.innerHTML);
-    }
+  const modules = {
+    toolbar: [
+      [{ 'header': [1, 2, 3, 4, 5, 6, false] }, { 'font': [] }],
+      [{ 'size': ['small', false, 'large', 'huge'] }],
+      ['bold', 'italic', 'underline', 'strike', 'blockquote'],
+      [{ 'list': 'ordered'}, { 'list': 'bullet' }, { 'indent': '-1'}, { 'indent': '+1' }],
+      [{ 'color': [] }, { 'background': [] }],
+      [{ 'align': [] }],
+      ['link', 'image', 'video', 'formula'],
+      ['clean']
+    ],
   };
 
-  const exec = (command) => {
-    document.execCommand(command, false, null);
-    editorRef.current.focus();
-    handleInput();
-  };
+  const formats = [
+    'header', 'font', 'size',
+    'bold', 'italic', 'underline', 'strike', 'blockquote',
+    'list', 'bullet', 'indent',
+    'link', 'image', 'video', 'formula',
+    'color', 'background', 'align'
+  ];
 
   return (
-    <div className={`flex flex-col border border-slate-350 dark:border-slate-700 rounded-xl overflow-hidden bg-white dark:bg-slate-800 focus-within:ring-2 focus-within:ring-brand-500 focus-within:border-brand-500 ${className || ''}`}>
-      <div className="flex items-center gap-1 p-2 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
-        <button type="button" onClick={() => exec('bold')} className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-700 dark:text-slate-300"><Bold size={16}/></button>
-        <button type="button" onClick={() => exec('italic')} className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-700 dark:text-slate-300"><Italic size={16}/></button>
-        <button type="button" onClick={() => exec('underline')} className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-700 dark:text-slate-300"><Underline size={16}/></button>
-        <div className="w-px h-4 bg-slate-300 dark:bg-slate-600 mx-1"></div>
-        <button type="button" onClick={() => exec('insertUnorderedList')} className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-700 dark:text-slate-300"><List size={16}/></button>
-      </div>
-      <div
+    <div className={`rich-text-editor-wrapper bg-white dark:bg-slate-800 rounded-xl overflow-hidden ${className || ''}`}>
+      <ReactQuill 
         ref={editorRef}
-        contentEditable
-        onInput={handleInput}
-        onBlur={handleInput}
-        className="flex-1 p-4 focus:outline-none dark:text-white prose dark:prose-invert max-w-none overflow-y-auto"
-        style={{ minHeight: '150px' }}
+        theme="snow"
+        value={value || ''}
+        onChange={onChange}
+        modules={modules}
+        formats={formats}
+        placeholder={placeholder}
+        className="h-96 sm:h-[500px] md:h-[600px] flex flex-col"
       />
+      <style>{`
+        .rich-text-editor-wrapper .quill {
+          display: flex;
+          flex-direction: column;
+          height: 100%;
+        }
+        .rich-text-editor-wrapper .ql-toolbar {
+          background-color: #f8fafc;
+          border-top-left-radius: 0.75rem;
+          border-top-right-radius: 0.75rem;
+          border-color: #e2e8f0;
+        }
+        .dark .rich-text-editor-wrapper .ql-toolbar {
+          background-color: #1e293b;
+          border-color: #334155;
+        }
+        .dark .rich-text-editor-wrapper .ql-toolbar button, 
+        .dark .rich-text-editor-wrapper .ql-toolbar .ql-picker {
+          color: #cbd5e1;
+        }
+        .dark .rich-text-editor-wrapper .ql-toolbar .ql-stroke {
+          stroke: #cbd5e1;
+        }
+        .dark .rich-text-editor-wrapper .ql-toolbar .ql-fill {
+          fill: #cbd5e1;
+        }
+        .dark .rich-text-editor-wrapper .ql-toolbar .ql-picker-options {
+          background-color: #1e293b;
+          border-color: #334155;
+        }
+        .rich-text-editor-wrapper .ql-container {
+          flex: 1;
+          border-bottom-left-radius: 0.75rem;
+          border-bottom-right-radius: 0.75rem;
+          border-color: #e2e8f0;
+          font-family: inherit;
+          font-size: 1rem;
+        }
+        .dark .rich-text-editor-wrapper .ql-container {
+          border-color: #334155;
+          color: #f8fafc;
+        }
+        .rich-text-editor-wrapper .ql-editor {
+          min-height: 400px;
+          flex: 1;
+        }
+      `}</style>
     </div>
   );
 }

@@ -14,6 +14,7 @@ export default function PublicCatalog() {
   const [loadingLesson, setLoadingLesson] = useState(false);
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showMockTestTopics, setShowMockTestTopics] = useState(false);
 
   useEffect(() => {
     loadCatalog();
@@ -75,9 +76,9 @@ export default function PublicCatalog() {
     <div className="min-h-screen pt-16 bg-white text-slate-900 font-sans flex flex-col">
       
       {/* ─── TOP NAVBAR (Topics) ─── */}
-      <div className="bg-[#282A35] text-white overflow-x-auto whitespace-nowrap scrollbar-hide sticky top-16 z-40">
+      <div className="bg-black text-white overflow-x-auto whitespace-nowrap scrollbar-hide sticky top-16 z-40">
         <div className="flex items-center">
-          {catalog.map(topic => (
+          {catalog.filter(t => t.lessons && t.lessons.length > 0).map(topic => (
             <button
               key={topic.id}
               onClick={() => {
@@ -92,7 +93,7 @@ export default function PublicCatalog() {
               }}
               className={`px-6 py-3 font-bold text-sm tracking-wide transition-colors ${
                 selectedTopicId === topic.id 
-                  ? 'bg-[#04AA6D] text-white' 
+                  ? 'bg-[#0ea5e9] text-white' 
                   : 'text-slate-300 hover:bg-slate-700 hover:text-white'
               }`}
             >
@@ -106,7 +107,7 @@ export default function PublicCatalog() {
         
         {/* Mobile Sidebar Toggle Button */}
         <button 
-          className="lg:hidden fixed bottom-4 right-4 z-50 bg-[#04AA6D] text-white p-4 rounded-full shadow-2xl"
+          className="lg:hidden fixed bottom-4 right-4 z-50 bg-[#0ea5e9] text-white p-4 rounded-full shadow-2xl"
           onClick={() => setSidebarOpen(!sidebarOpen)}
         >
           {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
@@ -125,7 +126,7 @@ export default function PublicCatalog() {
                 No topics available yet.
               </div>
             ) : (
-              catalog.map(topic => (
+              catalog.filter(t => t.lessons && t.lessons.length > 0).map(topic => (
                 <div key={`sidebar-topic-${topic.id}`} className="mb-6">
                   <h3 className="font-bold text-lg text-slate-800 mb-2 px-4 uppercase tracking-tight">
                     {topic.name} Tutorial
@@ -147,7 +148,7 @@ export default function PublicCatalog() {
                           }}
                           className={`w-full text-left px-4 py-1.5 text-[15px] transition-colors ${
                             selectedLessonId === lesson.id 
-                              ? 'bg-[#04AA6D] text-white font-bold' 
+                              ? 'bg-[#0ea5e9] text-white font-bold' 
                               : 'text-slate-700 hover:bg-slate-300 hover:text-black'
                           }`}
                         >
@@ -168,7 +169,7 @@ export default function PublicCatalog() {
             
             {loadingLesson ? (
               <div className="flex justify-center py-20">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#04AA6D]"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0ea5e9]"></div>
               </div>
             ) : lessonDetail ? (
               <div className="w3-content-wrapper">
@@ -185,7 +186,7 @@ export default function PublicCatalog() {
                 {/* Rich Text Content */}
                 {lessonDetail.content_html ? (
                   <div 
-                    className="prose prose-slate max-w-none prose-pre:bg-[#E7E9EB] prose-pre:text-black prose-pre:border-l-4 prose-pre:border-[#04AA6D] prose-headings:font-normal prose-h2:text-3xl prose-h3:text-2xl"
+                    className="prose prose-slate max-w-none prose-pre:bg-[#E7E9EB] prose-pre:text-black prose-pre:border-l-4 prose-pre:border-[#0ea5e9] prose-headings:font-normal prose-h2:text-3xl prose-h3:text-2xl"
                     dangerouslySetInnerHTML={{ __html: lessonDetail.content_html }}
                   />
                 ) : (
@@ -226,10 +227,10 @@ export default function PublicCatalog() {
 
                 {/* Navigation Buttons */}
                 <div className="mt-16 flex justify-between items-center pt-8 border-t border-slate-200">
-                  <button className="px-6 py-2 bg-[#04AA6D] text-white hover:bg-[#059862] rounded font-bold transition-colors shadow-sm">
+                  <button className="px-6 py-2 bg-[#0ea5e9] text-white hover:bg-[#059862] rounded font-bold transition-colors shadow-sm">
                     ❮ Previous
                   </button>
-                  <button className="px-6 py-2 bg-[#04AA6D] text-white hover:bg-[#059862] rounded font-bold transition-colors shadow-sm">
+                  <button className="px-6 py-2 bg-[#0ea5e9] text-white hover:bg-[#059862] rounded font-bold transition-colors shadow-sm">
                     Next ❯
                   </button>
                 </div>
@@ -249,15 +250,30 @@ export default function PublicCatalog() {
           <div className="sticky top-6">
             <h4 className="font-bold text-xs text-slate-400 uppercase tracking-widest text-center mb-4">Advertisement</h4>
             
-            <div className="bg-slate-100 rounded-lg p-4 text-center mb-6">
-              <p className="font-bold text-brand-600 mb-2">Want to test your skills?</p>
-              <p className="text-sm text-slate-600 mb-4">Take a full mock test on {selectedTopic?.name} and see where you stand.</p>
-              <button 
-                onClick={() => window.location.href = '/student/dashboard'}
-                className="w-full py-2 bg-brand-600 hover:bg-brand-700 text-white rounded font-bold text-sm"
-              >
-                Start Mock Test
-              </button>
+            <div className="bg-slate-100 rounded-lg p-4 text-center mb-6 border border-slate-200">
+              <p className="font-bold text-sky-600 mb-2">Want to test your skills?</p>
+              <p className="text-sm text-slate-600 mb-4">Take a full mock test and see where you stand.</p>
+              {!showMockTestTopics ? (
+                <button 
+                  onClick={() => setShowMockTestTopics(true)}
+                  className="w-full py-2 bg-sky-600 hover:bg-sky-700 text-white rounded font-bold text-sm transition-colors"
+                >
+                  Start Mock Test
+                </button>
+              ) : (
+                <div className="text-left bg-white border border-slate-200 rounded p-2 max-h-48 overflow-y-auto">
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 px-2">Select a Topic:</p>
+                  {catalog.map(t => (
+                    <button 
+                      key={`mock-${t.id}`}
+                      onClick={() => window.location.href = '/login'}
+                      className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-sky-50 hover:text-sky-600 rounded transition-colors"
+                    >
+                      {t.name}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             
             <div className="h-64 bg-slate-100 flex items-center justify-center text-slate-400 rounded border border-slate-200">

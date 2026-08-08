@@ -304,12 +304,11 @@ const StudentDashboard = () => {
                       )}
                         
                         {(attempt.status === 'submitted' || attempt.status === 'cancelled_cheating') && (
-                          <Link 
-                            to={`/student/test-results/${attempt.id}`}
-                            className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-750 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors"
-                          >
-                            <RotateCcw className="h-4 w-4" />
-                          </Link>
+                          <div className="flex flex-col items-end gap-1">
+                            <span className="text-[10px] font-bold text-slate-400 bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded">
+                              Submitted to Admin
+                            </span>
+                          </div>
                         )}
                     </div>
                   </div>

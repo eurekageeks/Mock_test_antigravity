@@ -501,6 +501,10 @@ def save_answer(
     is_correct = False
     if question.type == "mcq":
         is_correct = (ans_in.selected_option == question.correct_answer)
+    elif question.type == "mcq_multi":
+        student_set = set([x.strip() for x in ans_in.selected_option.split(',')]) if ans_in.selected_option else set()
+        correct_set = set([x.strip() for x in question.correct_answer.split(',')]) if question.correct_answer else set()
+        is_correct = (student_set == correct_set)
     elif question.type == "text":
         is_correct = None  # Subjective paragraph questions are pending admin evaluation
             

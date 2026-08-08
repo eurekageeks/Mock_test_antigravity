@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import { learningApi } from '../services/learningApi';
 import { useAuth } from '../context/AuthContext';
 import { 
   Play, BookOpen, ShieldCheck, Cpu, Code, Activity, Users,
@@ -14,6 +15,7 @@ export default function LandingPage() {
   const navigate = useNavigate();
   
   const [topics, setTopics] = useState([]);
+  const [learningTopics, setLearningTopics] = useState([]);
   const [tests, setTests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeFaq, setActiveFaq] = useState(null);
@@ -35,12 +37,14 @@ export default function LandingPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [topRes, testRes] = await Promise.all([
+        const [topRes, testRes, learningRes] = await Promise.all([
           api.get('/api/student/topics'),
-          api.get('/api/student/tests')
+          api.get('/api/student/tests'),
+          learningApi.getCatalog()
         ]);
         setTopics(topRes.data || []);
         setTests(testRes.data || []);
+        setLearningTopics(learningRes.data || []);
       } catch (err) {
         console.error("Failed to load topics/tests:", err);
       } finally {
@@ -83,8 +87,8 @@ export default function LandingPage() {
               </div>
               
               <h1 className="text-4xl lg:text-6xl font-black tracking-tight leading-tight text-slate-900">
-                Accelerate Your Exam<br/>
-                Preparation with<br/>
+                Accelerate Your Exam &<br/>
+                Interview Preparation with<br/>
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-purple-600">
                   A1TIExamPrism
                 </span>
@@ -142,26 +146,26 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ─── POPULAR TEST TOPICS ─── */}
-      <section className="py-20 bg-white">
+      {/* ─── POPULAR MOCK TESTS ─── */}
+      <section id="popular-mock-tests" className="py-20 bg-white">
         <div className="container mx-auto px-6 max-w-7xl">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-black text-slate-900 mb-4">Popular Test Topics</h2>
+            <h2 className="text-3xl font-black text-slate-900 mb-4">Popular Mock Tests</h2>
             <p className="text-slate-500">Explore our comprehensive curriculum tailored to your technical skills.</p>
           </div>
 
           <div className="flex flex-wrap justify-center gap-4">
             {loading ? (
               <div className="w-full text-center text-slate-400">Loading topics...</div>
-            ) : topics.length > 0 ? (
-              topics.map(topic => (
+            ) : topics.filter(t => tests.some(test => test.topic_id === t.id && test.status === 'published')).length > 0 ? (
+              topics.filter(t => tests.some(test => test.topic_id === t.id && test.status === 'published')).map(topic => (
                 <div 
                   key={`test-${topic.id}`}
-                  onClick={() => navigate('/catalog')}
-                  className="px-6 py-4 bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md hover:border-[#0284C7] cursor-pointer transition-all flex flex-col items-center justify-center min-w-[200px] group"
+                  onClick={() => navigate(user ? '/student/dashboard' : '/login')}
+                  className="px-6 py-4 bg-emerald-100 rounded-xl border border-emerald-200 shadow-sm hover:shadow-md hover:border-emerald-500 cursor-pointer transition-all flex flex-col items-center justify-center min-w-[200px] group"
                 >
-                  <h3 className="font-bold text-slate-800 text-center group-hover:text-[#0284C7]">{topic.name}</h3>
-                  <p className="text-xs text-slate-400 text-center mt-2 line-clamp-1 max-w-[150px]">{topic.description || "Practice Questions"}</p>
+                  <h3 className="font-bold text-emerald-900 text-center group-hover:text-emerald-700">{topic.name}</h3>
+                  <p className="text-xs text-emerald-600 text-center mt-2 line-clamp-1 max-w-[150px]">{topic.description || "Practice Questions"}</p>
                 </div>
               ))
             ) : (
@@ -171,26 +175,26 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ─── POPULAR TEST LEARNING ─── */}
-      <section className="py-20 bg-white border-t border-slate-100">
+      {/* ─── POPULAR INTERVIEW NOTES AND EXERCISES ─── */}
+      <section className="py-20 bg-emerald-50 border-t border-slate-100">
         <div className="container mx-auto px-6 max-w-7xl">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-black text-slate-900 mb-4">Popular Test Learning</h2>
+            <h2 className="text-3xl font-black text-slate-900 mb-4">Popular Interview Notes and Exercises</h2>
             <p className="text-slate-500">Master new concepts with our curated learning paths and video lessons.</p>
           </div>
 
           <div className="flex flex-wrap justify-center gap-4">
             {loading ? (
               <div className="w-full text-center text-slate-400">Loading learning paths...</div>
-            ) : topics.length > 0 ? (
-              topics.map(topic => (
+            ) : learningTopics.filter(t => t.lessons && t.lessons.length > 0).length > 0 ? (
+              learningTopics.filter(t => t.lessons && t.lessons.length > 0).map(topic => (
                 <div 
                   key={`learning-${topic.id}`}
                   onClick={() => navigate('/catalog')}
-                  className="px-6 py-4 bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md hover:border-[#0284C7] cursor-pointer transition-all flex flex-col items-center justify-center min-w-[200px] group"
+                  className="px-6 py-4 bg-emerald-100 rounded-xl border border-emerald-200 shadow-sm hover:shadow-md hover:border-emerald-500 cursor-pointer transition-all flex flex-col items-center justify-center min-w-[200px] group"
                 >
-                  <h3 className="font-bold text-slate-800 text-center group-hover:text-[#0284C7]">{topic.name}</h3>
-                  <p className="text-xs text-slate-400 text-center mt-2 line-clamp-1 max-w-[150px]">{topic.description || "Interactive Lessons"}</p>
+                  <h3 className="font-bold text-emerald-900 text-center group-hover:text-emerald-700">{topic.name}</h3>
+                  <p className="text-xs text-emerald-600 text-center mt-2 line-clamp-1 max-w-[150px]">{topic.description || "Interactive Lessons"}</p>
                 </div>
               ))
             ) : (
@@ -215,7 +219,7 @@ export default function LandingPage() {
               tests.slice(0, 6).map((test) => (
                 <div 
                   key={test.id}
-                  className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-lg transition-all flex flex-col group"
+                  className="bg-emerald-100 rounded-2xl p-6 border border-emerald-200 shadow-sm hover:shadow-lg hover:border-emerald-500 transition-all flex flex-col group"
                 >
                   <div className="flex items-center gap-2 mb-4">
                     <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-bold border border-blue-100 uppercase tracking-wide">
@@ -253,7 +257,7 @@ export default function LandingPage() {
       </section>
 
       {/* ─── WHY CHOOSE US ─── */}
-      <section className="py-20 bg-white">
+      <section id="features" className="py-20 bg-white">
         <div className="container mx-auto px-6 max-w-7xl">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-black text-slate-900 mb-4">Why Choose A1TIExamPrism?</h2>
@@ -289,7 +293,7 @@ export default function LandingPage() {
       </section>
 
       {/* ─── STATS SECTION ─── */}
-      <section className="py-16 bg-[#0B5C95] text-white">
+      <section id="stats" className="py-16 bg-[#0B5C95] text-white">
         <div className="container mx-auto px-6 max-w-7xl">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center divide-x divide-white/20">
             <div>
@@ -313,7 +317,7 @@ export default function LandingPage() {
       </section>
 
       {/* ─── TESTIMONIALS ─── */}
-      <section className="py-20 bg-[#F8FAFC]">
+      <section id="testimonials" className="py-20 bg-[#F8FAFC]">
         <div className="container mx-auto px-6 max-w-7xl">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-black text-slate-900 mb-4">Trusted by Thousands of Students</h2>
@@ -367,7 +371,7 @@ export default function LandingPage() {
       </section>
 
       {/* ─── FAQ ─── */}
-      <section className="py-20 bg-white">
+      <section id="faq" className="py-20 bg-white">
         <div className="container mx-auto px-6 max-w-3xl">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-black text-slate-900 mb-4">Frequently Asked Questions</h2>
@@ -396,7 +400,7 @@ export default function LandingPage() {
       </section>
 
       {/* ─── CONTACT ─── */}
-      <section className="py-20 bg-[#F8FAFC]">
+      <section id="contact" className="py-20 bg-[#F8FAFC]">
         <div className="container mx-auto px-6 max-w-5xl">
           <div className="bg-white rounded-3xl shadow-xl overflow-hidden flex flex-col md:flex-row border border-slate-100">
             

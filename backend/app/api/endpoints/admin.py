@@ -444,7 +444,7 @@ def add_question(
     db.refresh(question)
     
     # Save MCQ options if provided
-    if q_in.type == "mcq" and q_in.options:
+    if q_in.type in ["mcq", "mcq_multi"] and q_in.options:
         for opt in q_in.options:
             db_opt = QuestionOption(
                 question_id=question.id,
@@ -477,20 +477,20 @@ def update_question(
     question.image_urls = q_in.image_urls
     
     # Update options if MCQ
-    if q_in.type == "mcq" and q_in.options:
-        # Delete old options
-        db.query(QuestionOption).filter(QuestionOption.question_id == question_id).delete()
+    if q_in.type in ["mcq", "mcq_multi"] and q_in.options:
+        # Delete old options by clearing the collection
+        question.options.clear()
         # Add new ones
         for opt in q_in.options:
-            db_opt = QuestionOption(
-                question_id=question.id,
-                option_key=opt.option_key,
-                option_text=opt.option_text
+            question.options.append(
+                QuestionOption(
+                    option_key=opt.option_key,
+                    option_text=opt.option_text
+                )
             )
-            db.add(db_opt)
     elif q_in.type == "text":
         # Remove any existing MCQ options if converting type to Text
-        db.query(QuestionOption).filter(QuestionOption.question_id == question_id).delete()
+        question.options.clear()
         
     db.commit()
     db.refresh(question)
@@ -571,7 +571,7 @@ def duplicate_question(
     db.refresh(dup_q)
     
     # Duplicate options if original was MCQ
-    if orig_q.type == "mcq":
+    if orig_q.type in ["mcq", "mcq_multi"]:
         for opt in orig_q.options:
             dup_opt = QuestionOption(
                 question_id=dup_q.id,

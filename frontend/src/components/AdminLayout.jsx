@@ -59,7 +59,7 @@ const AdminLayout = ({ children }) => {
       activeBg: 'bg-purple-600 text-white shadow-lg shadow-purple-500/25',
     },
     {
-      label: 'LMS Content',
+      label: 'Interview Notes & QA',
       path: '/admin/learning',
       icon: GraduationCap,
       iconColor: 'text-blue-500',

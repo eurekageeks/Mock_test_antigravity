@@ -21,6 +21,7 @@ const MockTestInterface = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [showConfirmSubmit, setShowConfirmSubmit] = useState(false);
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [zoomedImage, setZoomedImage] = useState(null);
   const [warningsCount, setWarningsCount] = useState(0);
   const [showWarningModal, setShowWarningModal] = useState(false);
@@ -195,6 +196,30 @@ const MockTestInterface = () => {
     setTimeout(() => saveAnswerToBackend(questionId), 100);
   };
 
+  const handleMultiSelectOption = (questionId, optionKey) => {
+    const answer = localAnswers[questionId] || { selected_option: '' };
+    let currentOptions = answer.selected_option ? answer.selected_option.split(',') : [];
+    
+    if (currentOptions.includes(optionKey)) {
+      currentOptions = currentOptions.filter(k => k !== optionKey);
+    } else {
+      currentOptions.push(optionKey);
+    }
+    
+    currentOptions.sort(); // keep it sorted for consistency
+    const newValue = currentOptions.join(',');
+    
+    const updated = {
+      ...localAnswers,
+      [questionId]: {
+        selected_option: newValue,
+        text_answer: ''
+      }
+    };
+    setAnswers(updated);
+    setTimeout(() => saveAnswerToBackend(questionId), 100);
+  };
+
   const handleTextChange = (questionId, val) => {
     const updated = {
       ...localAnswers,
@@ -301,7 +326,7 @@ const MockTestInterface = () => {
             <h2 className="text-sm font-bold text-slate-500 mt-0.5">Marks: {currentQuestion?.marks}</h2>
           </div>
           <div className="px-3 py-1 bg-brand-500/10 text-brand-500 text-xs font-bold rounded-lg uppercase">
-            {currentQuestion?.type === 'mcq' ? 'Multiple Choice' : 'Text Entry'}
+            {currentQuestion?.type === 'mcq' ? 'Multiple Choice' : currentQuestion?.type === 'mcq_multi' ? 'Multiple Choice (Multi)' : 'Text Entry'}
           </div>
         </div>
 
@@ -333,21 +358,27 @@ const MockTestInterface = () => {
           </div>
 
           {/* MCQ Options list */}
-          {currentQuestion?.type === 'mcq' && (
+          {(currentQuestion?.type === 'mcq' || currentQuestion?.type === 'mcq_multi') && (
             <div className="grid grid-cols-1 gap-3">
               {currentQuestion.options.map((opt) => {
-                const isSelected = localAnswers[currentQuestion.id]?.selected_option === opt.option_key;
+                const isMulti = currentQuestion.type === 'mcq_multi';
+                const selectedString = localAnswers[currentQuestion.id]?.selected_option || '';
+                const selectedArr = selectedString ? selectedString.split(',') : [];
+                const isSelected = isMulti ? selectedArr.includes(opt.option_key) : selectedString === opt.option_key;
+                
                 return (
                   <button
                     key={opt.id}
-                    onClick={() => handleSelectOption(currentQuestion.id, opt.option_key)}
+                    onClick={() => isMulti ? handleMultiSelectOption(currentQuestion.id, opt.option_key) : handleSelectOption(currentQuestion.id, opt.option_key)}
                     className={`w-full flex items-center p-5 rounded-2xl border text-left font-medium transition-all duration-200 ${
                       isSelected
                         ? 'border-brand-500 bg-brand-500/5 dark:bg-brand-500/10 text-slate-900 dark:text-white ring-2 ring-brand-500/20'
                         : 'border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
                     }`}
                   >
-                    <span className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs mr-4 transition-colors ${
+                    <span className={`w-8 h-8 flex items-center justify-center font-bold text-xs mr-4 transition-colors ${
+                      isMulti ? 'rounded-md' : 'rounded-full'
+                    } ${
                       isSelected
                         ? 'bg-brand-500 text-white'
                         : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300'
@@ -418,6 +449,17 @@ const MockTestInterface = () => {
       <div className="md:col-span-4 bg-white dark:bg-slate-800/40 p-6 sm:p-8 flex flex-col justify-between">
         
         <div className="space-y-8">
+          
+          {/* Top Actions: Exit Exam */}
+          <div className="flex justify-end mb-4">
+            <button
+              onClick={() => setShowExitConfirm(true)}
+              className="px-5 py-2.5 bg-red-50 hover:bg-red-100 dark:bg-red-500/10 dark:hover:bg-red-500/20 text-red-600 dark:text-red-400 font-bold rounded-xl border border-red-200 dark:border-red-500/30 transition-all duration-200 text-sm flex items-center justify-center shadow-sm hover:shadow active:scale-[0.98]"
+            >
+              Exit Exam (Resume Later)
+            </button>
+          </div>
+
           {/* Live Timer box */}
           <div className="p-5 rounded-[24px] bg-gradient-to-br from-brand-500/10 to-indigo-500/10 border border-brand-500/10 flex items-center justify-between shadow-sm">
             <div className="flex items-center space-x-3">
@@ -483,7 +525,7 @@ const MockTestInterface = () => {
         <div className="mt-8 border-t border-slate-100 dark:border-slate-800 pt-6">
           <button
             onClick={() => setShowConfirmSubmit(true)}
-            className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl shadow-lg shadow-emerald-500/10 hover:shadow-emerald-500/25 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 text-sm flex items-center justify-center"
+            className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl shadow-lg shadow-emerald-500/10 hover:shadow-emerald-500/25 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 text-sm flex items-center justify-center mb-3"
           >
             <Send className="mr-2 h-4 w-4" /> Submit Exam
           </button>
@@ -537,6 +579,42 @@ const MockTestInterface = () => {
               </button>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* Exit Confirmation Modal */}
+      {showExitConfirm && (
+        <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white dark:bg-slate-800 w-full max-w-md rounded-[32px] p-8 border border-slate-200/50 dark:border-slate-700/50 shadow-2xl relative animate-scale-up">
+            
+            <div className="text-center mb-6">
+              <span className="inline-flex p-3 rounded-full bg-blue-500/10 text-blue-500 mb-3">
+                <AlertTriangle className="h-8 w-8 text-blue-500" />
+              </span>
+              <h3 className="text-2xl font-extrabold text-slate-900 dark:text-white">Exit Exam?</h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
+                Are you sure you want to leave? Your progress is saved, but the timer will continue running in the background. You can resume later as long as the time hasn't expired.
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowExitConfirm(false)}
+                className="flex-1 py-3 px-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 font-bold rounded-xl transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setShowExitConfirm(false);
+                  navigate('/student/dashboard');
+                }}
+                className="flex-1 py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-500/25 transition-all active:scale-[0.98]"
+              >
+                Yes, Exit Exam
+              </button>
+            </div>
           </div>
         </div>
       )}

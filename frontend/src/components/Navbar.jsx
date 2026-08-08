@@ -27,6 +27,17 @@ const Navbar = () => {
     navigate('/');
   };
 
+  const handleAnchorClick = (e, targetId) => {
+    setMobileMenuOpen(false);
+    if (location.pathname === '/') {
+      e.preventDefault();
+      const element = document.getElementById(targetId);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  };
+
   const isActive = (path) => location.pathname === path;
 
   const linkClass = (path) =>
@@ -68,11 +79,13 @@ const Navbar = () => {
             {/* Landing page anchor links - only show on landing page if guest */}
             {!user && (
               <>
-                <a href="#features" className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-brand-500 transition-colors">Features</a>
-                <a href="#stats" className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-brand-500 transition-colors">Stats</a>
-                <a href="#testimonials" className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-brand-500 transition-colors">Reviews</a>
-                <a href="#faq" className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-brand-500 transition-colors">FAQ</a>
-                <a href="#contact" className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-brand-500 transition-colors">Contact</a>
+                <a href="/#popular-mock-tests" onClick={(e) => handleAnchorClick(e, 'popular-mock-tests')} className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-brand-500 transition-colors">Mock Test</a>
+                <Link to="/catalog" className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-brand-500 transition-colors">Notes & QA</Link>
+                <a href="/#features" onClick={(e) => handleAnchorClick(e, 'features')} className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-brand-500 transition-colors">Features</a>
+                <a href="/#stats" onClick={(e) => handleAnchorClick(e, 'stats')} className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-brand-500 transition-colors">Stats</a>
+                <a href="/#testimonials" onClick={(e) => handleAnchorClick(e, 'testimonials')} className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-brand-500 transition-colors">Reviews</a>
+                <a href="/#faq" onClick={(e) => handleAnchorClick(e, 'faq')} className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-brand-500 transition-colors">FAQ</a>
+                <a href="/#contact" onClick={(e) => handleAnchorClick(e, 'contact')} className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-brand-500 transition-colors">Contact</a>
               </>
             )}
 
@@ -193,11 +206,13 @@ const Navbar = () => {
             {/* Landing page anchor links - guest */}
             {!user && (
               <>
-                <a href="#features" onClick={() => setMobileMenuOpen(false)} className="px-3 py-2 text-base font-medium rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800">Features</a>
-                <a href="#stats" onClick={() => setMobileMenuOpen(false)} className="px-3 py-2 text-base font-medium rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800">Stats</a>
-                <a href="#testimonials" onClick={() => setMobileMenuOpen(false)} className="px-3 py-2 text-base font-medium rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800">Reviews</a>
-                <a href="#faq" onClick={() => setMobileMenuOpen(false)} className="px-3 py-2 text-base font-medium rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800">FAQ</a>
-                <a href="#contact" onClick={() => setMobileMenuOpen(false)} className="px-3 py-2 text-base font-medium rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800">Contact</a>
+                <a href="/#popular-mock-tests" onClick={(e) => handleAnchorClick(e, 'popular-mock-tests')} className="px-3 py-2 text-base font-medium rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800">Mock Test</a>
+                <Link to="/catalog" onClick={() => setMobileMenuOpen(false)} className="px-3 py-2 text-base font-medium rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800">Notes & QA</Link>
+                <a href="/#features" onClick={(e) => handleAnchorClick(e, 'features')} className="px-3 py-2 text-base font-medium rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800">Features</a>
+                <a href="/#stats" onClick={(e) => handleAnchorClick(e, 'stats')} className="px-3 py-2 text-base font-medium rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800">Stats</a>
+                <a href="/#testimonials" onClick={(e) => handleAnchorClick(e, 'testimonials')} className="px-3 py-2 text-base font-medium rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800">Reviews</a>
+                <a href="/#faq" onClick={(e) => handleAnchorClick(e, 'faq')} className="px-3 py-2 text-base font-medium rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800">FAQ</a>
+                <a href="/#contact" onClick={(e) => handleAnchorClick(e, 'contact')} className="px-3 py-2 text-base font-medium rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800">Contact</a>
                 <div className="h-[1px] bg-slate-200 dark:bg-slate-800 my-2"></div>
                 <Link to="/login" onClick={() => setMobileMenuOpen(false)} className="px-3 py-2 text-center text-base font-semibold text-brand-600 dark:text-brand-400 hover:bg-brand-500/5 rounded-lg">Sign In</Link>
                 <Link to="/register" onClick={() => setMobileMenuOpen(false)} className="px-3 py-2 text-center text-base font-semibold bg-brand-600 text-white rounded-lg">Sign Up</Link>

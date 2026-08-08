@@ -26,6 +26,7 @@ const QuestionManagement = () => {
   const [type, setType] = useState('mcq');
   const [questionText, setQuestionText] = useState('');
   const [correctAnswer, setCorrectAnswer] = useState('A');
+  const [correctAnswerMulti, setCorrectAnswerMulti] = useState([]);
   const [marks, setMarks] = useState(2.0);
   const [explanation, setExplanation] = useState('');
   const [optA, setOptA] = useState('');
@@ -162,6 +163,7 @@ const QuestionManagement = () => {
     setType('mcq');
     setQuestionText('');
     setCorrectAnswer('A');
+    setCorrectAnswerMulti([]);
     setMarks(2.0);
     setExplanation('');
     setImages([]);
@@ -174,10 +176,11 @@ const QuestionManagement = () => {
     setType(q.type);
     setQuestionText(q.question_text);
     setCorrectAnswer(q.correct_answer);
+    setCorrectAnswerMulti(q.type === 'mcq_multi' && q.correct_answer ? q.correct_answer.split(',') : []);
     setMarks(q.marks);
     setExplanation(q.explanation || '');
     setImages(q.image_urls || []);
-    if (q.type === 'mcq') {
+    if (q.type === 'mcq' || q.type === 'mcq_multi') {
       setOptA(q.options.find(o => o.option_key === 'A')?.option_text || '');
       setOptB(q.options.find(o => o.option_key === 'B')?.option_text || '');
       setOptC(q.options.find(o => o.option_key === 'C')?.option_text || '');
@@ -313,7 +316,7 @@ const QuestionManagement = () => {
     e.preventDefault();
     setSubmitting(true);
 
-    const optionsPayload = type === 'mcq' ? [
+    const optionsPayload = (type === 'mcq' || type === 'mcq_multi') ? [
       { option_key: 'A', option_text: optA },
       { option_key: 'B', option_text: optB },
       { option_key: 'C', option_text: optC },
@@ -323,7 +326,7 @@ const QuestionManagement = () => {
     const payload = {
       type,
       question_text: questionText,
-      correct_answer: correctAnswer,
+      correct_answer: type === 'mcq_multi' ? correctAnswerMulti.sort().join(',') : correctAnswer,
       marks: parseFloat(marks),
       explanation: explanation || null,
       image_urls: images.length > 0 ? images : null,
@@ -769,7 +772,7 @@ Answer: B`}</pre>
                             {q.correct_answer}
                           </span>
                         </div>
-                        {q.type === 'mcq' && (
+                        {(q.type === 'mcq' || q.type === 'mcq_multi') && (
                           <div className="text-[10px] text-slate-400 font-bold pl-1">
                             • {q.options?.length || 0} Options
                           </div>
@@ -876,7 +879,8 @@ Answer: B`}</pre>
                     }}
                     className="w-full px-4 py-3 rounded-xl border border-slate-350 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm dark:text-white font-medium dark:bg-slate-800"
                   >
-                    <option value="mcq">Multiple Choice (MCQ)</option>
+                    <option value="mcq">Multiple Choice (Single Correct)</option>
+                    <option value="mcq_multi">Multiple Choice (Multiple Correct)</option>
                     <option value="text">Text Entry Answer</option>
                   </select>
                 </div>
@@ -923,19 +927,51 @@ Answer: B`}</pre>
               </div>
 
 
-              {type === 'mcq' && (
+              {(type === 'mcq' || type === 'mcq_multi') && (
                 <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-205 dark:border-slate-700 space-y-4">
                   <span className="block text-xs font-bold text-slate-400 uppercase tracking-wider">Multiple Choice Options</span>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {[['A', optA, setOptA], ['B', optB, setOptB], ['C', optC, setOptC], ['D', optD, setOptD]].map(([key, val, setter]) => (
                       <div key={key}>
-                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Option {key}</label>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Option {key}</label>
+                          <label className="flex items-center gap-1.5 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={type === 'mcq' ? correctAnswer === key : correctAnswerMulti.includes(key)}
+                              onChange={(e) => {
+                                if (type === 'mcq') {
+                                  if (e.target.checked) {
+                                    if (correctAnswer && correctAnswer !== key) {
+                                      Swal.fire('Info', 'Only one correct answer is allowed. The answer has been changed to ' + key + '.', 'info');
+                                    }
+                                    setCorrectAnswer(key);
+                                  } else {
+                                    Swal.fire('Warning', 'A single choice question must have one correct answer selected.', 'warning');
+                                  }
+                                } else {
+                                  if (e.target.checked) {
+                                    setCorrectAnswerMulti(prev => [...prev, key]);
+                                  } else {
+                                    setCorrectAnswerMulti(prev => prev.filter(k => k !== key));
+                                  }
+                                }
+                              }}
+                              className="w-3.5 h-3.5 text-brand-600 rounded focus:ring-brand-500 bg-slate-100 dark:bg-slate-700 border-slate-300 dark:border-slate-600 cursor-pointer"
+                            />
+                            <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase">Correct</span>
+                          </label>
+                        </div>
                         <input
                           type="text"
                           required
                           value={val}
                           onChange={(e) => setter(e.target.value)}
-                          className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-750 bg-white dark:bg-slate-800 text-xs dark:text-white font-medium"
+                          className={`w-full px-3 py-2 rounded-lg border ${
+                            (type === 'mcq' && correctAnswer === key) || (type === 'mcq_multi' && correctAnswerMulti.includes(key)) 
+                              ? 'border-emerald-500 ring-1 ring-emerald-500/20 bg-emerald-50/10' 
+                              : 'border-slate-300 dark:border-slate-750 bg-white dark:bg-slate-800'
+                          } text-xs dark:text-white font-medium`}
                           placeholder={`Option ${key} description`}
                         />
                       </div>
@@ -945,20 +981,9 @@ Answer: B`}</pre>
               )}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Correct Answer</label>
-                  {type === 'mcq' ? (
-                    <select
-                      value={correctAnswer}
-                      onChange={(e) => setCorrectAnswer(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl border border-slate-350 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm dark:text-white font-medium dark:bg-slate-800"
-                    >
-                      <option value="A">Option A</option>
-                      <option value="B">Option B</option>
-                      <option value="C">Option C</option>
-                      <option value="D">Option D</option>
-                    </select>
-                  ) : (
+                {type === 'text' && (
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Correct Answer</label>
                     <textarea
                       rows={4}
                       required
@@ -967,9 +992,9 @@ Answer: B`}</pre>
                       className="w-full px-4 py-3 rounded-xl border border-slate-355 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm dark:text-white font-medium"
                       placeholder="Expected exact text match..."
                     />
-                  )}
-                </div>
-                <div>
+                  </div>
+                )}
+                <div className={type === 'text' ? '' : 'sm:col-span-2'}>
                   <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Explanation (Optional)</label>
                   <textarea
                     rows={4}
