@@ -108,10 +108,6 @@ def serve_upload_file(filename: str):
         
     raise HTTPException(status_code=404, detail="File not found")
 
-# Mount uploads directory for serving static image files
-os.makedirs("uploads", exist_ok=True)
-app.mount("/api/uploads", StaticFiles(directory="uploads"), name="uploads")
-
 @app.get("/")
 def read_root():
     return {

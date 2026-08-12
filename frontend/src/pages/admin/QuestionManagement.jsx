@@ -33,11 +33,7 @@ const QuestionManagement = () => {
   const [optB, setOptB] = useState('');
   const [optC, setOptC] = useState('');
   const [optD, setOptD] = useState('');
-  const [images, setImages] = useState([]);
-  const [imageUploading, setImageUploading] = useState(false);
-  const imageInputRef = useRef(null);
   const [submitting, setSubmitting] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
 
   // PDF upload states
   const fileInputRef = useRef(null);
@@ -166,7 +162,6 @@ const QuestionManagement = () => {
     setCorrectAnswerMulti([]);
     setMarks(2.0);
     setExplanation('');
-    setImages([]);
     setOptA(''); setOptB(''); setOptC(''); setOptD('');
     setShowModal(true);
   };
@@ -179,7 +174,6 @@ const QuestionManagement = () => {
     setCorrectAnswerMulti(q.type === 'mcq_multi' && q.correct_answer ? q.correct_answer.split(',') : []);
     setMarks(q.marks);
     setExplanation(q.explanation || '');
-    setImages(q.image_urls || []);
     if (q.type === 'mcq' || q.type === 'mcq_multi') {
       setOptA(q.options.find(o => o.option_key === 'A')?.option_text || '');
       setOptB(q.options.find(o => o.option_key === 'B')?.option_text || '');
@@ -187,129 +181,6 @@ const QuestionManagement = () => {
       setOptD(q.options.find(o => o.option_key === 'D')?.option_text || '');
     }
     setShowModal(true);
-  };
-
-  const compressImage = (file) => {
-    return new Promise((resolve) => {
-      if (!file.type.startsWith('image/')) {
-        resolve(file);
-        return;
-      }
-      
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const img = new Image();
-        img.onload = () => {
-          const MAX_WIDTH = 1000;
-          const MAX_HEIGHT = 1000;
-          let width = img.width;
-          let height = img.height;
-          
-          if (width > height) {
-            if (width > MAX_WIDTH) {
-              height *= MAX_WIDTH / width;
-              width = MAX_WIDTH;
-            }
-          } else {
-            if (height > MAX_HEIGHT) {
-              width *= MAX_HEIGHT / height;
-              height = MAX_HEIGHT;
-            }
-          }
-          
-          const canvas = document.createElement('canvas');
-          canvas.width = width;
-          canvas.height = height;
-          
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, width, height);
-          
-          canvas.toBlob(
-            (blob) => {
-              if (blob) {
-                resolve(new File([blob], file.name, {
-                  type: 'image/jpeg',
-                  lastModified: Date.now()
-                }));
-              } else {
-                resolve(file);
-              }
-            },
-            'image/jpeg',
-            0.7
-          );
-        };
-        img.onerror = () => resolve(file);
-        img.src = event.target.result;
-      };
-      reader.onerror = () => resolve(file);
-      reader.readAsDataURL(file);
-    });
-  };
-
-  const uploadImageFiles = async (files) => {
-    if (!files || files.length === 0) return;
-    setImageUploading(true);
-    
-    try {
-      const formData = new FormData();
-      // Compress and prepare files asynchronously
-      const compressedFiles = await Promise.all(
-        Array.from(files).map(file => compressImage(file))
-      );
-      
-      for (let i = 0; i < compressedFiles.length; i++) {
-        formData.append('files', compressedFiles[i]);
-      }
-
-      const res = await api.post('/api/upload/images', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-      setImages(prev => [...prev, ...res.data]);
-      showMessage("Images uploaded successfully!", "success");
-    } catch (err) {
-      console.error(err);
-      showMessage("Failed to upload images", "error");
-    } finally {
-      setImageUploading(false);
-      if (imageInputRef.current) imageInputRef.current.value = '';
-    }
-  };
-
-  const handleImageUpload = (e) => uploadImageFiles(e.target.files);
-
-  const handleImageDragOver = (e) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleImageDragLeave = (e) => {
-    e.preventDefault();
-    setIsDragging(false);
-  };
-
-  const handleImageDrop = (e) => {
-    e.preventDefault();
-    setIsDragging(false);
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      const imageFiles = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
-      if (imageFiles.length > 0) uploadImageFiles(imageFiles);
-    }
-  };
-
-  const handlePaste = (e) => {
-    if (e.clipboardData && e.clipboardData.items) {
-      const imageFiles = Array.from(e.clipboardData.items)
-        .filter(item => item.type.startsWith('image/'))
-        .map(item => item.getAsFile());
-      if (imageFiles.length > 0) {
-        e.preventDefault();
-        uploadImageFiles(imageFiles);
-      }
-    }
-  };
-  const removeImage = (idxToRemove) => {
-    setImages(prev => prev.filter((_, idx) => idx !== idxToRemove));
   };
 
   const handleCreateOrUpdateQuestion = async (e) => {
@@ -329,7 +200,6 @@ const QuestionManagement = () => {
       correct_answer: type === 'mcq_multi' ? correctAnswerMulti.sort().join(',') : correctAnswer,
       marks: parseFloat(marks),
       explanation: explanation || null,
-      image_urls: images.length > 0 ? images : null,
       options: optionsPayload
     };
 
@@ -837,21 +707,8 @@ Answer: B`}</pre>
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
           <div 
-            className={`bg-white dark:bg-slate-800 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-[32px] p-8 border ${isDragging ? 'border-brand-500 ring-4 ring-brand-500/20' : 'border-slate-200/50 dark:border-slate-700/50'} shadow-2xl relative animate-scale-up transition-all`}
-            onDragOver={handleImageDragOver}
-            onDragEnter={handleImageDragOver}
-            onDragLeave={handleImageDragLeave}
-            onDrop={handleImageDrop}
-            onPaste={handlePaste}
+            className={`bg-white dark:bg-slate-800 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-[32px] p-8 border border-slate-200/50 dark:border-slate-700/50 shadow-2xl relative animate-scale-up transition-all`}
           >
-            {isDragging && (
-              <div className="absolute inset-0 z-50 bg-brand-500/10 backdrop-blur-sm rounded-[32px] flex items-center justify-center pointer-events-none">
-                <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-xl flex flex-col items-center animate-bounce">
-                  <Image className="h-10 w-10 text-brand-500 mb-2" />
-                  <p className="text-sm font-bold text-slate-700 dark:text-slate-300">Drop images here to upload</p>
-                </div>
-              </div>
-            )}
 
 
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-700/50 pb-4 mb-6">
@@ -902,28 +759,7 @@ Answer: B`}</pre>
                 <SimpleEditor 
                   value={questionText}
                   onChange={setQuestionText}
-                  className="h-48"
                 />
-              </div>
-
-              {/* Image Upload Section */}
-              <div>
-                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Reference Images (Optional)</label>
-                <div className="flex flex-wrap gap-4 mb-3">
-                  {images && images.map((url, idx) => (
-                    <div key={idx} className="relative group rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 w-24 h-24">
-                      <img src={getImageUrl(url)} alt={`img-${idx}`} className="w-full h-full object-cover" />
-                      <button type="button" onClick={() => removeImage(idx)} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <X className="w-3 h-3" />
-                      </button>
-                    </div>
-                  ))}
-                  <button type="button" onClick={() => imageInputRef.current?.click()} className="w-24 h-24 border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-xl flex flex-col items-center justify-center text-slate-500 hover:text-brand-500 hover:border-brand-500 hover:bg-brand-50 dark:hover:bg-brand-900/20 transition-all">
-                    {imageUploading ? <Loader className="w-6 h-6 animate-spin" /> : <Upload className="w-6 h-6" />}
-                    <span className="text-[10px] font-semibold mt-1">Upload</span>
-                  </button>
-                </div>
-                <input type="file" multiple accept="image/*" className="hidden" ref={imageInputRef} onChange={handleImageUpload} />
               </div>
 
 
