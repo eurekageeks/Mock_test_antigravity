@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { BookOpen, Layers, FileText, ChevronRight, Menu, X } from 'lucide-react';
+import { Menu, X, BookOpen, Layers, FileText, ChevronRight } from 'lucide-react';
 import { learningApi } from '../services/learningApi';
+import 'react-quill-new/dist/quill.snow.css';
 
 export default function PublicCatalog() {
   const [catalog, setCatalog] = useState([]);
@@ -126,8 +127,10 @@ export default function PublicCatalog() {
                 No topics available yet.
               </div>
             ) : (
-              catalog.filter(t => t.lessons && t.lessons.length > 0).map(topic => (
-                <div key={`sidebar-topic-${topic.id}`} className="mb-6">
+              catalog
+                .filter(t => t.lessons && t.lessons.length > 0 && t.id === selectedTopicId)
+                .map(topic => (
+                  <div key={`sidebar-topic-${topic.id}`} className="mb-6">
                   <h3 className="font-bold text-lg text-slate-800 mb-2 px-4 uppercase tracking-tight">
                     {topic.name} Tutorial
                   </h3>
@@ -185,10 +188,12 @@ export default function PublicCatalog() {
 
                 {/* Rich Text Content */}
                 {lessonDetail.content_html ? (
-                  <div 
-                    className="prose prose-slate max-w-none prose-pre:bg-[#E7E9EB] prose-pre:text-black prose-pre:border-l-4 prose-pre:border-[#0ea5e9] prose-headings:font-normal prose-h2:text-3xl prose-h3:text-2xl"
-                    dangerouslySetInnerHTML={{ __html: lessonDetail.content_html }}
-                  />
+                  <div className="ql-container ql-snow border-0">
+                    <div 
+                      className="ql-editor text-slate-700 text-lg leading-relaxed"
+                      dangerouslySetInnerHTML={{ __html: lessonDetail.content_html }}
+                    />
+                  </div>
                 ) : (
                   <div className="bg-[#E7E9EB] p-6 rounded-lg text-slate-600">
                     This lesson does not contain any text content yet.

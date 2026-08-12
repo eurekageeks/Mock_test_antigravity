@@ -118,3 +118,12 @@ body {
 .animate-delay-200 { animation-delay: 200ms; }
 .animate-delay-300 { animation-delay: 300ms; }
 .animate-delay-400 { animation-delay: 400ms; }
+
+/* Quill Editor Global Spacing Overrides */
+.ql-editor p {
+  margin-bottom: 0.5em !important;
+}
+.ql-editor p:empty, .ql-editor p:has(br) {
+  min-height: 1.5em !important;
+}
+
