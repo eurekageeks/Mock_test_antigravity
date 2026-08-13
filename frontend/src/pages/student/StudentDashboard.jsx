@@ -4,7 +4,7 @@ import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { 
   Play, RotateCcw, AlertTriangle, CheckCircle, Clock, 
-  Award, FileText, ChevronRight, User, Sparkles
+  Award, FileText, ChevronRight, User, Sparkles, Search
 } from 'lucide-react';
 
 const StudentDashboard = () => {
@@ -14,6 +14,10 @@ const StudentDashboard = () => {
   const [stats, setStats] = useState(null);
   const [tests, setTests] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  const [topics, setTopics] = useState([]);
+  const [selectedTopicId, setSelectedTopicId] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   
   // Skills Modal state
   const [showSkillsModal, setShowSkillsModal] = useState(false);
@@ -32,6 +36,7 @@ const StudentDashboard = () => {
       setStats(statsRes.data);
       setTests(testsRes.data);
       if (topicsRes?.data) {
+        setTopics(topicsRes.data);
         setAvailableSkillsList(topicsRes.data.map(t => t.name));
       }
 
@@ -154,40 +159,59 @@ const StudentDashboard = () => {
 
         {/* Overview Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          {/* Profile completion card */}
+          {/* Topic Filter Card */}
           <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-200/50 dark:border-slate-700/50 shadow-sm flex flex-col justify-between">
             <div className="flex items-center justify-between mb-4">
-              <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Profile Status</span>
-              <User className="h-5 w-5 text-brand-500" />
+              <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Filter Mock Tests</span>
+              <FileText className="h-5 w-5 text-brand-500" />
             </div>
             <div>
-              <span className="text-3xl font-black text-slate-900 dark:text-white">{stats?.profile_completion_percentage}%</span>
-              <span className="text-xs text-slate-400 block mt-1">Profile Completion Meter</span>
-              <div className="w-full bg-slate-100 dark:bg-slate-700 h-2 rounded-full mt-3 overflow-hidden mb-4">
-                <div 
-                  className="bg-brand-500 h-full rounded-full transition-all duration-500"
-                  style={{ width: `${stats?.profile_completion_percentage}%` }}
-                ></div>
-              </div>
-              <button 
-                onClick={() => setShowSkillsModal(true)}
-                className="w-full py-2 bg-slate-100 dark:bg-slate-700/50 hover:bg-slate-200 dark:hover:bg-slate-700 text-brand-600 dark:text-brand-400 font-bold rounded-xl text-xs transition-colors"
+              <span className="text-sm text-slate-400 block mb-2">Select a topic to filter</span>
+              <select
+                value={selectedTopicId}
+                onChange={(e) => setSelectedTopicId(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm dark:text-white font-medium mb-4 transition-colors"
               >
-                Update Skills
+                <option value="">All Topics</option>
+                {topics.map(t => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </select>
+              <button 
+                onClick={() => setSelectedTopicId('')}
+                className="w-full py-2 bg-slate-100 dark:bg-slate-700/50 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 font-bold rounded-xl text-xs transition-colors"
+              >
+                Clear Filter
               </button>
             </div>
           </div>
 
-          {/* Completed Tests */}
+          {/* Search Tests */}
           <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-200/50 dark:border-slate-700/50 shadow-sm flex flex-col justify-between">
             <div className="flex items-center justify-between mb-4">
-              <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Exam History</span>
-              <CheckCircle className="h-5 w-5 text-emerald-500" />
+              <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Search Exams</span>
+              <Search className="h-5 w-5 text-emerald-500" />
             </div>
             <div>
-              <span className="text-3xl font-black text-slate-900 dark:text-white">{stats?.completed_tests_count}</span>
-              <span className="text-xs text-slate-400 block mt-1">Mock Exams Completed</span>
-              <span className="text-[10px] text-emerald-500 font-semibold block mt-3">Graded immediately on submission</span>
+              <span className="text-sm text-slate-400 block mb-2">Search by test title</span>
+              <div className="relative mb-4">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Search className="h-4 w-4 text-slate-400" />
+                </div>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm dark:text-white font-medium transition-colors"
+                  placeholder="e.g. Python Basics..."
+                />
+              </div>
+              <button 
+                onClick={() => setSearchQuery('')}
+                className="w-full py-2 bg-slate-100 dark:bg-slate-700/50 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 font-bold rounded-xl text-xs transition-colors"
+              >
+                Clear Search
+              </button>
             </div>
           </div>
 
@@ -208,59 +232,76 @@ const StudentDashboard = () => {
         {/* Live Mock Tests Grid */}
         <div className="space-y-6">
 
-          {tests.filter(t => t.is_recommended).length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Show ONLY recommended tests based on skills, up to 6 total */}
-              {tests.filter(t => t.is_recommended).slice(0, 6).map((test) => (
-                <div 
-                  key={test.id} 
-                  className={`bg-white dark:bg-slate-800 rounded-3xl p-6 border ${test.is_recommended ? 'border-amber-400/50 shadow-amber-500/10' : 'border-slate-200/60 dark:border-slate-800'} hover:border-brand-500/50 dark:hover:border-brand-500/50 shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col justify-between`}
-                >
-                  <div>
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center space-x-2">
-                        <span className="inline-block px-3 py-1 rounded-xl text-xs font-semibold bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400">
-                          {test.topic_name || "General"}
-                        </span>
-                        <span className={`inline-flex px-2 py-0.5 rounded text-[9px] font-black uppercase ${
-                          test.has_subjective 
-                            ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400' 
-                            : 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
-                        }`}>
-                          {test.has_subjective ? 'SUBJECTIVE' : 'OBJECTIVE'}
-                        </span>
-                      </div>
-                      {test.is_recommended && (
-                        <span className="flex items-center text-[10px] font-extrabold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-2.5 py-1 rounded-full">
-                          ★ Recommended
-                        </span>
-                      )}
-                    </div>
-                    <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2 line-clamp-1">{test.title}</h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-4 line-clamp-2">{test.description}</p>
-                  </div>
-                  <div>
-                    <div className="flex items-center justify-between text-[11px] font-semibold text-slate-400 mb-4 border-t border-slate-100 dark:border-slate-700/50 pt-4">
-                      <span className="flex items-center"><Clock className="h-4 w-4 mr-1 text-slate-400" /> {test.duration_minutes} Mins</span>
-                      <span className="flex items-center"><FileText className="h-4 w-4 mr-1 text-slate-400" /> {test.question_count} Qs</span>
-                      <span className="flex items-center"><Award className="h-4 w-4 mr-1 text-slate-400" /> {test.total_marks} Marks</span>
-                    </div>
-                    <Link 
-                      to={`/student/test-attempt-start/${test.id}`}
-                      className="w-full inline-flex items-center justify-center py-3 px-4 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-2xl shadow-md shadow-brand-500/10 transition-all duration-200 text-sm"
-                    >
-                      <Play className="h-4.5 w-4.5 mr-2 fill-current" /> Start Test
-                    </Link>
-                  </div>
+          {(() => {
+            let displayTests = selectedTopicId 
+              ? tests.filter(t => t.topic_id === parseInt(selectedTopicId))
+              : (tests.filter(t => t.is_recommended).length > 0 ? tests.filter(t => t.is_recommended).slice(0, 6) : tests.slice(0, 6));
+              
+            if (searchQuery.trim()) {
+              const query = searchQuery.toLowerCase();
+              displayTests = (selectedTopicId ? tests : tests).filter(t => 
+                (selectedTopicId ? t.topic_id === parseInt(selectedTopicId) : true) &&
+                t.title.toLowerCase().includes(query)
+              );
+            }
+              
+            if (displayTests.length === 0) {
+              return (
+                <div className="p-8 text-center bg-white dark:bg-slate-800 rounded-3xl border border-dashed border-slate-200 dark:border-slate-700">
+                  <p className="text-slate-400 dark:text-slate-500 font-semibold">No mock tests found for the selected criteria.</p>
+                  <p className="text-xs text-slate-400 mt-2">Try selecting a different topic or check back later.</p>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="p-8 text-center bg-white dark:bg-slate-800 rounded-3xl border border-dashed border-slate-200 dark:border-slate-700">
-              <p className="text-slate-400 dark:text-slate-500 font-semibold">No mock tests currently match your registered skills.</p>
-              <p className="text-xs text-slate-400 mt-2">Update your skills profile or visit the full Mock Tests page to browse all exams.</p>
-            </div>
-          )}
+              );
+            }
+            
+            return (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {displayTests.map((test) => (
+                  <div 
+                    key={test.id} 
+                    className={`bg-white dark:bg-slate-800 rounded-3xl p-6 border ${test.is_recommended && !selectedTopicId ? 'border-amber-400/50 shadow-amber-500/10' : 'border-slate-200/60 dark:border-slate-800'} hover:border-brand-500/50 dark:hover:border-brand-500/50 shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col justify-between`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center space-x-2">
+                          <span className="inline-block px-3 py-1 rounded-xl text-xs font-semibold bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400">
+                            {test.topic_name || "General"}
+                          </span>
+                          <span className={`inline-flex px-2 py-0.5 rounded text-[9px] font-black uppercase ${
+                            test.has_subjective 
+                              ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400' 
+                              : 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                          }`}>
+                            {test.has_subjective ? 'SUBJECTIVE' : 'OBJECTIVE'}
+                          </span>
+                        </div>
+                        {test.is_recommended && !selectedTopicId && (
+                          <span className="flex items-center text-[10px] font-extrabold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-2.5 py-1 rounded-full">
+                            ★ Recommended
+                          </span>
+                        )}
+                      </div>
+                      <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2 line-clamp-1">{test.title}</h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mb-4 line-clamp-2">{test.description}</p>
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between text-[11px] font-semibold text-slate-400 mb-4 border-t border-slate-100 dark:border-slate-700/50 pt-4">
+                        <span className="flex items-center"><Clock className="h-4 w-4 mr-1 text-slate-400" /> {test.duration_minutes} Mins</span>
+                        <span className="flex items-center"><FileText className="h-4 w-4 mr-1 text-slate-400" /> {test.question_count} Qs</span>
+                        <span className="flex items-center"><Award className="h-4 w-4 mr-1 text-slate-400" /> {test.total_marks} Marks</span>
+                      </div>
+                      <Link 
+                        to={`/student/test-attempt-start/${test.id}`}
+                        className="w-full inline-flex items-center justify-center py-3 px-4 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-2xl shadow-md shadow-brand-500/10 transition-all duration-200 text-sm"
+                      >
+                        <Play className="h-4.5 w-4.5 mr-2 fill-current" /> Start Test
+                      </Link>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
         </div>
 
         {/* Recent Attempts and Popular Topics */}

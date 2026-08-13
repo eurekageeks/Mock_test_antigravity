@@ -74,7 +74,7 @@ export default function LandingPage() {
     <div className="bg-[#F8FAFC] min-h-screen text-slate-900 font-sans">
       
       {/* ─── HERO SECTION ─── */}
-      <section className="relative pt-28 pb-20 lg:pt-36 lg:pb-24 overflow-hidden">
+      <section className="relative pt-12 pb-20 lg:pt-16 lg:pb-24 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-[#EBF4FA] to-transparent z-0"></div>
         
         <div className="container relative z-10 mx-auto px-6 max-w-7xl">
