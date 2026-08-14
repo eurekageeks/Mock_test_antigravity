@@ -6,7 +6,7 @@ from app.core.database import get_db
 from app.models.models import User
 from app.api.deps import get_admin_user
 from app.schemas.learning_schemas import (
-    LearningLessonCreate, LearningLessonResponse
+    LearningLessonCreate, LearningLessonResponse, LessonReorderRequest
 )
 # Models need to be imported directly to use with SQLAlchemy
 from app.models.models import (
@@ -34,7 +34,15 @@ def get_lessons(topic_id: int = None, db: Session = Depends(get_db), current_use
     query = db.query(LearningLesson)
     if topic_id:
         query = query.filter(LearningLesson.topic_id == topic_id)
-    return query.all()
+    return query.order_by(LearningLesson.order_index).all()
+
+
+@router.post("/lessons/reorder")
+def reorder_lessons(request: LessonReorderRequest, db: Session = Depends(get_db), current_user: User = Depends(get_admin_user)):
+    for item in request.items:
+        db.query(LearningLesson).filter(LearningLesson.id == item.id).update({"order_index": item.order_index})
+    db.commit()
+    return {"message": "Reordered successfully"}
 
 @router.get("/lessons/{lesson_id}", response_model=LearningLessonResponse)
 def get_lesson(lesson_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_admin_user)):

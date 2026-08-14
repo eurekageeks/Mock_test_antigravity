@@ -6,6 +6,7 @@ export const learningApi = {
   createLesson: (data) => api.post('/api/admin/learning/lessons', data),
   updateLesson: (lessonId, data) => api.put(`/api/admin/learning/lessons/${lessonId}`, data),
   deleteLesson: (lessonId) => api.delete(`/api/admin/learning/lessons/${lessonId}`),
+  reorderLessons: (data) => api.post('/api/admin/learning/lessons/reorder', data),
   
   // Public Catalog
   getCatalog: () => api.get('/api/student/learning/catalog'),

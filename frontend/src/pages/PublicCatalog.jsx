@@ -13,6 +13,7 @@ export default function PublicCatalog() {
   
   const [lessonDetail, setLessonDetail] = useState(null);
   const [loadingLesson, setLoadingLesson] = useState(false);
+  const [showQA, setShowQA] = useState(false);
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showMockTestTopics, setShowMockTestTopics] = useState(false);
@@ -45,6 +46,7 @@ export default function PublicCatalog() {
   // Fetch lesson content whenever selectedLessonId changes
   useEffect(() => {
     const fetchLesson = async () => {
+      setShowQA(false);
       if (!selectedLessonId) {
         setLessonDetail(null);
         return;
@@ -176,9 +178,24 @@ export default function PublicCatalog() {
               </div>
             ) : lessonDetail ? (
               <div className="w3-content-wrapper">
-                <h1 className="text-4xl font-normal text-slate-900 mb-8 pb-4 border-b border-slate-200">
-                  {lessonDetail.title}
-                </h1>
+                <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 pb-4 border-b border-slate-200 gap-4">
+                  <h1 className="text-4xl font-normal text-slate-900">
+                    {lessonDetail.title}
+                  </h1>
+                  
+                  {lessonDetail.qa_button_text && (
+                    <div className="bg-sky-50 rounded-lg p-3 border border-sky-100 shadow-sm min-w-[200px] text-center shrink-0">
+                      <p className="font-bold text-xs text-sky-800 mb-2 uppercase tracking-wide">Interview Preparation</p>
+                      <button 
+                        onClick={() => setShowQA(!showQA)}
+                        className="w-full py-2 bg-[#0ea5e9] hover:bg-sky-600 text-white rounded font-bold text-sm transition-colors shadow-md"
+                      >
+                        {showQA ? 'Back to Lesson Content' : lessonDetail.qa_button_text}
+                      </button>
+                    </div>
+                  )}
+                </div>
+
                 
                 {lessonDetail.description && (
                   <div className="text-lg text-slate-700 mb-8 leading-relaxed">
@@ -186,18 +203,33 @@ export default function PublicCatalog() {
                   </div>
                 )}
 
-                {/* Rich Text Content */}
-                {lessonDetail.content_html ? (
-                  <div className="ql-container ql-snow border-0">
-                    <div 
-                      className="ql-editor text-slate-700 text-lg leading-relaxed"
-                      dangerouslySetInnerHTML={{ __html: lessonDetail.content_html }}
-                    />
-                  </div>
+                {/* Rich Text / QA Content */}
+                {showQA ? (
+                  lessonDetail.qa_content_html ? (
+                    <div className="ql-container ql-snow border-0">
+                      <div 
+                        className="ql-editor text-slate-700 text-lg leading-relaxed"
+                        dangerouslySetInnerHTML={{ __html: lessonDetail.qa_content_html }}
+                      />
+                    </div>
+                  ) : (
+                    <div className="bg-[#E7E9EB] p-6 rounded-lg text-slate-600">
+                      This lesson does not contain any Q&A content yet.
+                    </div>
+                  )
                 ) : (
-                  <div className="bg-[#E7E9EB] p-6 rounded-lg text-slate-600">
-                    This lesson does not contain any text content yet.
-                  </div>
+                  lessonDetail.content_html ? (
+                    <div className="ql-container ql-snow border-0">
+                      <div 
+                        className="ql-editor text-slate-700 text-lg leading-relaxed"
+                        dangerouslySetInnerHTML={{ __html: lessonDetail.content_html }}
+                      />
+                    </div>
+                  ) : (
+                    <div className="bg-[#E7E9EB] p-6 rounded-lg text-slate-600">
+                      This lesson does not contain any text content yet.
+                    </div>
+                  )
                 )}
 
                 {/* Video Content */}
@@ -253,6 +285,7 @@ export default function PublicCatalog() {
         {/* ─── RIGHT SIDEBAR (Ads / Info - Hidden on smaller screens) ─── */}
         <div className="hidden xl:block w-72 bg-white border-l border-slate-200 p-6 overflow-y-auto">
           <div className="sticky top-6">
+            
             <h4 className="font-bold text-xs text-slate-400 uppercase tracking-widest text-center mb-4">Advertisement</h4>
             
             <div className="bg-slate-100 rounded-lg p-4 text-center mb-6 border border-slate-200">

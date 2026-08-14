@@ -58,7 +58,7 @@ class Topic(Base):
     
     # Relationships
     tests = relationship("MockTest", back_populates="topic", cascade="all, delete-orphan")
-    lessons = relationship("LearningLesson", back_populates="topic", cascade="all, delete-orphan")
+    lessons = relationship("LearningLesson", back_populates="topic", cascade="all, delete-orphan", order_by="LearningLesson.order_index")
 
 class MockTest(Base):
     __tablename__ = "mock_tests"
@@ -151,6 +151,10 @@ class Result(Base):
     is_passed = Column(Boolean, nullable=False)
     correct_count = Column(Integer, nullable=False)
     wrong_count = Column(Integer, nullable=False)
+    objective_score = Column(Float, nullable=False, default=0.0)
+    subjective_score = Column(Float, nullable=False, default=0.0)
+    objective_total_marks = Column(Float, nullable=False, default=0.0)
+    subjective_total_marks = Column(Float, nullable=False, default=0.0)
     rank = Column(Integer, nullable=True)
     
     attempt = relationship("TestAttempt", back_populates="result")
@@ -176,6 +180,8 @@ class LearningLesson(Base):
     title = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
     content_html = Column(Text, nullable=True)  # Rich text content
+    qa_button_text = Column(String(255), nullable=True)
+    qa_content_html = Column(Text, nullable=True)
     video_url = Column(String(500), nullable=True) # Embedded YouTube or other URL
     image_url = Column(String(500), nullable=True) # Lesson thumbnail image
     estimated_time_minutes = Column(Integer, default=10)

@@ -184,6 +184,10 @@ class ResultResponse(BaseSchema):
     is_passed: bool
     correct_count: int
     wrong_count: int
+    objective_score: float = 0.0
+    subjective_score: float = 0.0
+    objective_total_marks: float = 0.0
+    subjective_total_marks: float = 0.0
     rank: Optional[int] = None
 
 class TestAttemptResponse(BaseSchema):

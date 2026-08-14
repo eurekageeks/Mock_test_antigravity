@@ -8,6 +8,8 @@ class LearningLessonBase(BaseModel):
     title: str
     description: Optional[str] = None
     content_html: Optional[str] = None
+    qa_button_text: Optional[str] = None
+    qa_content_html: Optional[str] = None
     video_url: Optional[str] = None
     image_url: Optional[str] = None
     estimated_time_minutes: int = 10
@@ -33,3 +35,10 @@ class TopicLearningHierarchy(TopicResponse):
 
 class LessonCompleteRequest(BaseModel):
     time_spent: int
+
+class LessonReorderItem(BaseModel):
+    id: int
+    order_index: int
+
+class LessonReorderRequest(BaseModel):
+    items: List[LessonReorderItem]

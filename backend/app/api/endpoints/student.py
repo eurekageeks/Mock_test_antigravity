@@ -706,10 +706,19 @@ def submit_attempt_internal(attempt_id: int, db: Session) -> Result:
     questions = db.query(Question).filter(Question.mock_test_id == attempt.mock_test_id).all()
     
     score = 0.0
+    objective_score = 0.0
+    subjective_score = 0.0
+    objective_total_marks = 0.0
+    subjective_total_marks = 0.0
     correct_count = 0
     wrong_count = 0
     
     for q in questions:
+        if q.type == 'mcq':
+            objective_total_marks += q.marks
+        elif q.type == 'text':
+            subjective_total_marks += q.marks
+            
         student_ans = db.query(StudentAnswer).filter(
             StudentAnswer.test_attempt_id == attempt.id,
             StudentAnswer.question_id == q.id
@@ -719,6 +728,10 @@ def submit_attempt_internal(attempt_id: int, db: Session) -> Result:
         if student_ans:
             if student_ans.is_correct is True:
                 score += q.marks
+                if q.type == 'mcq':
+                    objective_score += q.marks
+                elif q.type == 'text':
+                    subjective_score += q.marks
                 correct_count += 1
             elif student_ans.is_correct is False:
                 wrong_count += 1
@@ -748,6 +761,10 @@ def submit_attempt_internal(attempt_id: int, db: Session) -> Result:
         result.is_passed = is_passed
         result.correct_count = correct_count
         result.wrong_count = wrong_count
+        result.objective_score = objective_score
+        result.subjective_score = subjective_score
+        result.objective_total_marks = objective_total_marks
+        result.subjective_total_marks = subjective_total_marks
         result.rank = rank
     else:
         result = Result(
@@ -757,6 +774,10 @@ def submit_attempt_internal(attempt_id: int, db: Session) -> Result:
             is_passed=is_passed,
             correct_count=correct_count,
             wrong_count=wrong_count,
+            objective_score=objective_score,
+            subjective_score=subjective_score,
+            objective_total_marks=objective_total_marks,
+            subjective_total_marks=subjective_total_marks,
             rank=rank
         )
         db.add(result)
