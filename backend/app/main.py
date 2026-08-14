@@ -34,6 +34,28 @@ try:
         if "warnings_count" not in attempt_columns:
             conn.execute(text("ALTER TABLE test_attempts ADD COLUMN warnings_count INTEGER NOT NULL DEFAULT 0;"))
             
+        # Check results table
+        result_scores = conn.execute(text("PRAGMA table_info(results);")).fetchall()
+        score_columns = [row[1] for row in result_scores]
+        if "objective_score" not in score_columns:
+            conn.execute(text("ALTER TABLE results ADD COLUMN objective_score FLOAT DEFAULT 0.0;"))
+        if "subjective_score" not in score_columns:
+            conn.execute(text("ALTER TABLE results ADD COLUMN subjective_score FLOAT DEFAULT 0.0;"))
+        if "objective_total_marks" not in score_columns:
+            conn.execute(text("ALTER TABLE results ADD COLUMN objective_total_marks FLOAT DEFAULT 0.0;"))
+        if "subjective_total_marks" not in score_columns:
+            conn.execute(text("ALTER TABLE results ADD COLUMN subjective_total_marks FLOAT DEFAULT 0.0;"))
+            
+        # Check learning_lessons table
+        result_lessons = conn.execute(text("PRAGMA table_info(learning_lessons);")).fetchall()
+        lesson_columns = [row[1] for row in result_lessons]
+        if "order_index" not in lesson_columns:
+            conn.execute(text("ALTER TABLE learning_lessons ADD COLUMN order_index INTEGER DEFAULT 0;"))
+        if "qa_button_text" not in lesson_columns:
+            conn.execute(text("ALTER TABLE learning_lessons ADD COLUMN qa_button_text VARCHAR(255);"))
+        if "qa_content_html" not in lesson_columns:
+            conn.execute(text("ALTER TABLE learning_lessons ADD COLUMN qa_content_html TEXT;"))
+            
         # Migrate old image URLs in questions to include /api prefix
         conn.execute(text("""
             UPDATE questions 

@@ -31,10 +31,16 @@ def create_lesson(lesson: LearningLessonCreate, db: Session = Depends(get_db), c
 
 @router.get("/lessons", response_model=List[LearningLessonResponse])
 def get_lessons(topic_id: int = None, db: Session = Depends(get_db), current_user: User = Depends(get_admin_user)):
-    query = db.query(LearningLesson)
-    if topic_id:
-        query = query.filter(LearningLesson.topic_id == topic_id)
-    return query.order_by(LearningLesson.order_index).all()
+    try:
+        query = db.query(LearningLesson)
+        if topic_id:
+            query = query.filter(LearningLesson.topic_id == topic_id)
+        return query.order_by(LearningLesson.order_index).all()
+    except Exception as e:
+        import traceback
+        error_msg = f"Error: {str(e)}\n{traceback.format_exc()}"
+        print(error_msg)
+        raise HTTPException(status_code=500, detail=error_msg)
 
 
 @router.post("/lessons/reorder")
