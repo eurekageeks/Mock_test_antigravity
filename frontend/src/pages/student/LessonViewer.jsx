@@ -193,7 +193,7 @@ export default function LessonViewer() {
           <div className="bg-white dark:bg-slate-800 rounded-3xl p-8 md:p-12 shadow-sm border border-slate-200 dark:border-slate-700">
             <div 
               className="prose prose-slate dark:prose-invert prose-lg max-w-none"
-              dangerouslySetInnerHTML={{ __html: lesson.content_html }}
+              dangerouslySetInnerHTML={{ __html: lesson.content_html.replace(/&nbsp;/g, ' ') }}
             />
           </div>
         )}

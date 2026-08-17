@@ -120,6 +120,15 @@ body {
 .animate-delay-400 { animation-delay: 400ms; }
 
 /* Quill Editor Global Spacing Overrides */
+.ql-container.border-0 {
+  border: none !important;
+}
+
+.ql-editor, .ql-editor * {
+  word-break: normal !important;
+  overflow-wrap: break-word !important;
+}
+
 .ql-editor p {
   margin-bottom: 0.5em !important;
 }

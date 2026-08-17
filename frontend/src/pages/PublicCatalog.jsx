@@ -209,7 +209,7 @@ export default function PublicCatalog() {
                     <div className="ql-container ql-snow border-0">
                       <div 
                         className="ql-editor text-slate-700 text-lg leading-relaxed"
-                        dangerouslySetInnerHTML={{ __html: lessonDetail.qa_content_html }}
+                        dangerouslySetInnerHTML={{ __html: lessonDetail.qa_content_html.replace(/&nbsp;/g, ' ') }}
                       />
                     </div>
                   ) : (
@@ -222,7 +222,7 @@ export default function PublicCatalog() {
                     <div className="ql-container ql-snow border-0">
                       <div 
                         className="ql-editor text-slate-700 text-lg leading-relaxed"
-                        dangerouslySetInnerHTML={{ __html: lessonDetail.content_html }}
+                        dangerouslySetInnerHTML={{ __html: lessonDetail.content_html.replace(/&nbsp;/g, ' ') }}
                       />
                     </div>
                   ) : (
