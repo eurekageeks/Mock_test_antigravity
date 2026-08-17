@@ -1,9 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Query
 from sqlalchemy.orm import Session
+from sqlalchemy import or_, and_, Date, cast
 from typing import List, Optional
 import re
 import io
 import pdfplumber
+from datetime import datetime, date, timedelta
 from app.core.database import get_db
 from app.models.models import (
     User, Topic, MockTest, Question, QuestionOption, TestAttempt, Result, StudentAnswer
@@ -13,7 +15,7 @@ from app.schemas.schemas import (
     TopicCreate, TopicResponse, MockTestCreate, MockTestResponse,
     QuestionCreate, QuestionResponse, QuestionReorder,
     BulkQuestionDelete, BulkQuestionUpdateMarks, AttemptDetailReviewResponse,
-    BulkAttemptDelete
+    BulkAttemptDelete, PaginatedAttemptResponse
 )
 from app.api.deps import get_admin_user
 from app.api.endpoints.student import submit_attempt_internal
@@ -105,20 +107,48 @@ def get_student_attempts(
         attempt.student_email = attempt.user.email if attempt.user else None
     return attempts
 
-@router.get("/attempts", response_model=List[TestAttemptResponse])
-def get_all_attempts(db: Session = Depends(get_db), current_user: User = Depends(get_admin_user)):
-    all_attempts = db.query(TestAttempt).order_by(TestAttempt.id.desc()).all()
+@router.get("/attempts", response_model=PaginatedAttemptResponse)
+def get_all_attempts(
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None,
+    topic_id: Optional[int] = None,
+    type_filter: str = Query("all", description="all, objective, subjective"),
+    status_filter: str = Query("all", description="all, pending, pass, fail, violation"),
+    page: int = 1,
+    limit: int = 25,
+    db: Session = Depends(get_db), 
+    current_user: User = Depends(get_admin_user)
+):
+    query = db.query(TestAttempt).join(MockTest)
+    
+    if start_date:
+        query = query.filter(TestAttempt.start_time >= datetime.combine(start_date, datetime.min.time()))
+    if end_date:
+        query = query.filter(TestAttempt.start_time < datetime.combine(end_date + timedelta(days=1), datetime.min.time()))
+    if topic_id:
+        query = query.filter(MockTest.topic_id == topic_id)
+        
+    all_attempts = query.order_by(TestAttempt.id.desc()).all()
     filtered_attempts = []
+    
     for attempt in all_attempts:
         if not attempt.mock_test_id:
             continue
+            
         subj_count = db.query(Question).filter(
             Question.mock_test_id == attempt.mock_test_id,
             Question.type == 'text'
         ).count()
         
-        # Include attempts if they have subjective questions OR if they were cancelled due to cheating
-        if subj_count == 0 and attempt.status != "cancelled_cheating":
+        obj_count = db.query(Question).filter(
+            Question.mock_test_id == attempt.mock_test_id,
+            Question.type == 'mcq'
+        ).count()
+        
+        # Apply Type Filter
+        if type_filter == "objective" and obj_count == 0:
+            continue
+        if type_filter == "subjective" and subj_count == 0:
             continue
             
         pending_subj = db.query(StudentAnswer).join(Question).filter(
@@ -127,6 +157,20 @@ def get_all_attempts(db: Session = Depends(get_db), current_user: User = Depends
             StudentAnswer.is_correct == None
         ).count()
         
+        # Apply Status Filter logic
+        if status_filter == "pending":
+            if pending_subj == 0:
+                continue
+        elif status_filter == "pass":
+            if not (attempt.result and attempt.result.is_passed):
+                continue
+        elif status_filter == "fail":
+            if not (attempt.result and not attempt.result.is_passed):
+                continue
+        elif status_filter == "violation":
+            if attempt.status != "cancelled_cheating" and (not attempt.warnings_count or attempt.warnings_count == 0):
+                continue
+        
         attempt.mock_test_title = attempt.mock_test.title if attempt.mock_test else "Unknown Test"
         attempt.mock_test_total_marks = attempt.mock_test.total_marks if attempt.mock_test else 0.0
         attempt.topic_name = attempt.mock_test.topic.name if (attempt.mock_test and attempt.mock_test.topic) else "General"
@@ -134,9 +178,22 @@ def get_all_attempts(db: Session = Depends(get_db), current_user: User = Depends
         attempt.student_email = attempt.user.email if attempt.user else "N/A"
         attempt.student_mobile = attempt.user.mobile if attempt.user else "N/A"
         attempt.subjective_questions_count = subj_count
+        attempt.objective_questions_count = obj_count
         attempt.pending_subjective_count = pending_subj
         filtered_attempts.append(attempt)
-    return filtered_attempts
+        
+    # Apply pagination on the filtered list
+    total = len(filtered_attempts)
+    start_idx = (page - 1) * limit
+    end_idx = start_idx + limit
+    paginated_items = filtered_attempts[start_idx:end_idx]
+    
+    return {
+        "total": total,
+        "page": page,
+        "limit": limit,
+        "items": paginated_items
+    }
 
 @router.get("/attempts/{attempt_id}/review", response_model=AttemptDetailReviewResponse)
 def get_admin_attempt_review(

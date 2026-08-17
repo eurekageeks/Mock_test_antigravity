@@ -205,9 +205,16 @@ class TestAttemptResponse(BaseSchema):
     student_email: Optional[str] = None
     student_mobile: Optional[str] = None
     subjective_questions_count: Optional[int] = 0
+    objective_questions_count: Optional[int] = 0
     pending_subjective_count: Optional[int] = 0
     warnings_count: Optional[int] = 0
     result: Optional[ResultResponse] = None
+
+class PaginatedAttemptResponse(BaseModel):
+    total: int
+    page: int
+    limit: int
+    items: List[TestAttemptResponse]
 
 class ReviewAnswerResponse(BaseSchema):
     id: int

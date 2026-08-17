@@ -13,7 +13,8 @@ const SubmissionsManagement = () => {
   const [attempts, setAttempts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all'); // 'all', 'pending', 'graded'
+  const [statusFilter, setStatusFilter] = useState('all'); 
+  const [typeFilter, setTypeFilter] = useState('all'); // 'all', 'objective', 'subjective'// 'all', 'pending', 'graded'
   
   // Review Modal State
   const [selectedAttempt, setSelectedAttempt] = useState(null);
@@ -21,13 +22,41 @@ const SubmissionsManagement = () => {
   const [reviewLoading, setReviewLoading] = useState(false);
   const [gradingQuestionId, setGradingQuestionId] = useState(null);
   const [notification, setNotification] = useState(null);
-  const [questionViewMode, setQuestionViewMode] = useState('subjective'); // 'subjective' or 'all'
+  const [questionViewMode, setQuestionViewMode] = useState('all'); // Default to 'all' to show objective answers too
+
+  // New Pagination & Filter States
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [topicId, setTopicId] = useState('');
+  const [topics, setTopics] = useState([]);
+  const [limit, setLimit] = useState(25);
+  const [totalItems, setTotalItems] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedAttemptIds, setSelectedAttemptIds] = useState([]);
+
+  useEffect(() => {
+    const fetchTopics = async () => {
+      try {
+        const res = await api.get('/api/admin/topics');
+        setTopics(res.data);
+      } catch (err) {
+        console.error("Failed to fetch topics", err);
+      }
+    };
+    fetchTopics();
+  }, []);
 
   const fetchAttempts = async () => {
     setLoading(true);
     try {
-      const res = await api.get('/api/admin/attempts');
-      setAttempts(res.data);
+      let url = `/api/admin/attempts?page=${currentPage}&limit=${limit}&status_filter=${statusFilter}&type_filter=${typeFilter}`;
+      if (startDate) url += `&start_date=${startDate}`;
+      if (endDate) url += `&end_date=${endDate}`;
+      if (topicId) url += `&topic_id=${topicId}`;
+      
+      const res = await api.get(url);
+      setAttempts(res.data.items || []);
+      setTotalItems(res.data.total || 0);
     } catch (err) {
       console.error("Failed to load attempts:", err);
       showNotification('error', 'Failed to load student submissions.');
@@ -38,16 +67,12 @@ const SubmissionsManagement = () => {
 
   useEffect(() => {
     fetchAttempts();
-  }, []);
-
-  const [selectedAttemptIds, setSelectedAttemptIds] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 8;
+  }, [currentPage, limit, statusFilter, typeFilter, startDate, endDate, topicId]);
 
   useEffect(() => {
     setSelectedAttemptIds([]);
     setCurrentPage(1);
-  }, [statusFilter, searchTerm]);
+  }, [statusFilter, typeFilter, searchTerm, startDate, endDate, topicId, limit]);
 
   const handleSelectAll = (e, filteredList) => {
     if (e.target.checked) {
@@ -118,7 +143,7 @@ const SubmissionsManagement = () => {
     setSelectedAttempt(attempt);
     setReviewLoading(true);
     setReviewData(null);
-    setQuestionViewMode('subjective'); // Default to subjective questions view
+    setQuestionViewMode('all'); // Default to showing all questions (objective + subjective)
     try {
       const res = await api.get(`/api/admin/attempts/${attempt.id}/review`);
       setReviewData(res.data);
@@ -174,7 +199,7 @@ const SubmissionsManagement = () => {
     }
   };
 
-  // Filter attempts
+  // Filter attempts (local search term only)
   const filteredAttempts = attempts.filter(att => {
     const matchesSearch = (
       (att.student_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -183,15 +208,7 @@ const SubmissionsManagement = () => {
       (att.mock_test_title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (att.topic_name || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
-    
-    if (!matchesSearch) return false;
-    if (statusFilter === 'all') return true;
-    
-    // Check if subjective questions are pending grading
-    if (statusFilter === 'pending') return (att.pending_subjective_count > 0) || att.status === 'in_progress';
-    if (statusFilter === 'graded') return (att.pending_subjective_count === 0) && att.result && att.result.score !== null;
-    if (statusFilter === 'violations') return att.status === 'cancelled_cheating';
-    return true;
+    return matchesSearch;
   });
 
   const formatDate = (dateString) => {
@@ -205,8 +222,9 @@ const SubmissionsManagement = () => {
       return dateString;
     }
   };
-  const totalPages = Math.ceil(filteredAttempts.length / itemsPerPage);
-  const paginatedAttempts = filteredAttempts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const totalPages = Math.ceil(totalItems / limit);
+  // paginatedAttempts is simply the filteredAttempts from the backend page response
+  const paginatedAttempts = filteredAttempts;
 
   return (
     <div className="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen p-6 sm:p-8 transition-colors duration-300">
@@ -239,7 +257,7 @@ const SubmissionsManagement = () => {
                   </span>
                 </h1>
                 <p className="text-slate-500 dark:text-slate-400 mt-0.5 text-sm">
-                  Showing subjective test submissions, student responses, and any tests flagged for cheating violations.
+                  Showing exam submissions, student responses, and any tests flagged for cheating violations.
                 </p>
               </div>
             </div>
@@ -254,34 +272,88 @@ const SubmissionsManagement = () => {
         </div>
 
         {/* Filters and Search Bar */}
-        <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center justify-between bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search student name, email, mobile, test or topic..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 dark:text-white transition-all"
-            />
+        <div className="flex flex-col gap-4 bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+          
+          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+            <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0">
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-2">Filter Status:</span>
+              {['all', 'pending', 'pass', 'fail', 'violation'].map((filter) => (
+                <button
+                  key={filter}
+                  onClick={() => setStatusFilter(filter)}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-medium capitalize transition-all whitespace-nowrap ${
+                    statusFilter === filter
+                      ? 'bg-purple-600 text-white shadow-md shadow-purple-500/20 font-semibold'
+                      : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
+                  }`}
+                >
+                  {filter === 'all' ? 'All Submissions' 
+                    : filter === 'pending' ? '⏳ Pending' 
+                    : filter === 'pass' ? '✅ Pass'
+                    : filter === 'fail' ? '❌ Fail'
+                    : '⚠️ Violations'}
+                </button>
+              ))}
+            </div>
+            
+            <div className="relative w-full md:max-w-xs">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search within page..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 dark:text-white transition-all"
+              />
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-2">Filter Status:</span>
-            {['all', 'pending', 'graded', 'violations'].map((filter) => (
-              <button
-                key={filter}
-                onClick={() => setStatusFilter(filter)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-medium capitalize transition-all ${
-                  statusFilter === filter
-                    ? 'bg-purple-600 text-white shadow-md shadow-purple-500/20 font-semibold'
-                    : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
-                }`}
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Date Range:</span>
+              <input 
+                type="date" 
+                value={startDate} 
+                onChange={e => setStartDate(e.target.value)}
+                className="px-3 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-sm dark:text-white"
+              />
+              <span className="text-slate-400">to</span>
+              <input 
+                type="date" 
+                value={endDate} 
+                onChange={e => setEndDate(e.target.value)}
+                className="px-3 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-sm dark:text-white"
+              />
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Topic / Skill:</span>
+              <select
+                value={topicId}
+                onChange={e => setTopicId(e.target.value)}
+                className="px-3 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-sm dark:text-white min-w-[150px]"
               >
-                {filter === 'all' ? 'All Submissions' : filter === 'pending' ? '⏳ Pending Review' : filter === 'graded' ? '✅ Reviewed' : '⚠️ Violations'}
-              </button>
-            ))}
+                <option value="">All Topics</option>
+                {topics.map(t => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Test Type:</span>
+              <select
+                value={typeFilter}
+                onChange={e => setTypeFilter(e.target.value)}
+                className="px-3 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-sm dark:text-white"
+              >
+                <option value="all">All Types</option>
+                <option value="objective">Objective Only</option>
+                <option value="subjective">Subjective Included</option>
+              </select>
+            </div>
           </div>
+
         </div>
 
         {/* Bulk Actions Banner */}
@@ -335,7 +407,7 @@ const SubmissionsManagement = () => {
                     </th>
                     <th className="py-4 px-6 font-semibold">Student Details</th>
                     <th className="py-4 px-6 font-semibold">Exam / Topic Being Checked</th>
-                    <th className="py-4 px-6 font-semibold">Subjective Qs Status</th>
+                    <th className="py-4 px-6 font-semibold">Questions Status</th>
                     <th className="py-4 px-6 font-semibold">Score / Pass</th>
                     <th className="py-4 px-6 font-semibold text-right">Action</th>
                   </tr>
@@ -410,8 +482,13 @@ const SubmissionsManagement = () => {
                             <span className="text-xs font-semibold text-slate-500 italic">Not Applicable</span>
                           ) : (
                             <div className="space-y-1.5">
-                              <div className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                                📝 Subjective Qs: <span className="font-bold text-purple-600 dark:text-purple-400">{attempt.subjective_questions_count || 0}</span>
+                              <div className="flex gap-4">
+                                <div className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">
+                                  📝 Subj Qs: <span className="font-bold text-purple-600 dark:text-purple-400">{attempt.subjective_questions_count || 0}</span>
+                                </div>
+                                <div className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">
+                                  🎯 Obj Qs: <span className="font-bold text-blue-600 dark:text-blue-400">{attempt.objective_questions_count || 0}</span>
+                                </div>
                               </div>
                               {needsGrading ? (
                                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 animate-pulse">
@@ -512,11 +589,27 @@ const SubmissionsManagement = () => {
             </div>
 
             {/* Pagination Controls */}
-            {totalPages > 1 && (
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-slate-105 dark:border-slate-700/50 bg-slate-50/30 dark:bg-slate-900/20">
-                <span className="text-xs text-slate-500 dark:text-slate-400">
-                  Showing <strong className="text-slate-800 dark:text-white">{(currentPage - 1) * itemsPerPage + 1}</strong> to <strong className="text-slate-800 dark:text-white">{Math.min(currentPage * itemsPerPage, filteredAttempts.length)}</strong> of <strong className="text-slate-800 dark:text-white">{filteredAttempts.length}</strong> submissions
-                </span>
+            {totalPages > 0 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-slate-200 dark:border-slate-700/50 bg-slate-50/30 dark:bg-slate-900/20">
+                <div className="flex items-center gap-4">
+                  <span className="text-xs text-slate-500 dark:text-slate-400">
+                    Showing <strong className="text-slate-800 dark:text-white">{totalItems === 0 ? 0 : (currentPage - 1) * limit + 1}</strong> to <strong className="text-slate-800 dark:text-white">{Math.min(currentPage * limit, totalItems)}</strong> of <strong className="text-slate-800 dark:text-white">{totalItems}</strong> submissions
+                  </span>
+                  
+                  <select
+                    value={limit}
+                    onChange={(e) => {
+                      setLimit(Number(e.target.value));
+                      setCurrentPage(1);
+                    }}
+                    className="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-xs dark:text-white cursor-pointer outline-none"
+                  >
+                    <option value={25}>25 per page</option>
+                    <option value={50}>50 per page</option>
+                    <option value={100}>100 per page</option>
+                  </select>
+                </div>
+                
                 <div className="flex items-center space-x-2">
                   <button
                     onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
@@ -525,12 +618,12 @@ const SubmissionsManagement = () => {
                   >
                     <ChevronLeft className="h-3.5 w-3.5 mr-1" /> Previous
                   </button>
-                  <span className="px-3 py-1 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-xl text-xs font-bold">
+                  <span className="text-xs font-medium px-2 text-slate-500">
                     Page {currentPage} of {totalPages}
                   </span>
                   <button
                     onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                    disabled={currentPage === totalPages}
+                    disabled={currentPage === totalPages || totalPages === 0}
                     className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold disabled:opacity-40 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center"
                   >
                     Next <ChevronRight className="h-3.5 w-3.5 ml-1" />
