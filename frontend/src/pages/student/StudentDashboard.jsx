@@ -251,7 +251,9 @@ const StudentDashboard = () => {
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm dark:text-white font-medium mb-4 transition-colors"
               >
                 <option value="">All Topics</option>
-                {topics.map(t => (
+                {topics
+                  .filter(t => selectedSkills.includes(t.name))
+                  .map(t => (
                   <option key={t.id} value={t.id}>{t.name}</option>
                 ))}
               </select>
