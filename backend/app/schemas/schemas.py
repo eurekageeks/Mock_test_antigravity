@@ -55,6 +55,7 @@ class StudentProfileResponse(BaseSchema):
     education: Optional[str]
     experience: Optional[str]
     resume_path: Optional[str]
+    date_of_birth: Optional[date] = None
     skills: List[SkillResponse] = []
 
 class StudentProfileUpdate(BaseModel):
@@ -62,6 +63,7 @@ class StudentProfileUpdate(BaseModel):
     mobile: Optional[str] = None
     education: Optional[str] = None
     experience: Optional[str] = None
+    date_of_birth: Optional[date] = None
 
 # ----------------- Topic -----------------
 class TopicCreate(BaseModel):

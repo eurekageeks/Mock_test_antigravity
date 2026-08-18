@@ -18,6 +18,7 @@ const StudentProfile = () => {
   const [mobile, setMobile] = useState('');
   const [education, setEducation] = useState('');
   const [experience, setExperience] = useState('');
+  const [dob, setDob] = useState('');
   
   // Skills editing state
   const [skills, setSkills] = useState([]);
@@ -41,6 +42,7 @@ const StudentProfile = () => {
         setMobile(user?.mobile || '');
         setEducation(res.data.education || '');
         setExperience(res.data.experience || '');
+        setDob(res.data.date_of_birth ? res.data.date_of_birth.split('T')[0] : '');
         setSkills(res.data.skills.map(s => s.name));
       } catch (err) {
         console.error("Failed to load profile details:", err);
@@ -92,7 +94,8 @@ const StudentProfile = () => {
         name,
         mobile,
         education,
-        experience
+        experience,
+        date_of_birth: dob || null
       });
       
       // 2. Save skills
@@ -189,6 +192,18 @@ const StudentProfile = () => {
                     onChange={(e) => setMobile(e.target.value)}
                     className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm dark:text-white font-medium"
                     placeholder="Mobile number"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Date of Birth</label>
+                <div className="relative">
+                  <input
+                    type="date"
+                    value={dob}
+                    onChange={(e) => setDob(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all outline-none"
                   />
                 </div>
               </div>

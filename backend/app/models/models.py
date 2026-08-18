@@ -35,6 +35,7 @@ class StudentProfile(Base):
     education = Column(Text, nullable=True)
     experience = Column(Text, nullable=True)
     resume_path = Column(String(500), nullable=True)
+    date_of_birth = Column(Date, nullable=True)
     
     # Relationships
     user = relationship("User", back_populates="profile")
