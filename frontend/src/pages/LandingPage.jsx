@@ -157,8 +157,8 @@ export default function LandingPage() {
           <div className="flex flex-wrap justify-center gap-4">
             {loading ? (
               <div className="w-full text-center text-slate-400">Loading topics...</div>
-            ) : topics.filter(t => tests.some(test => test.topic_id === t.id && test.status === 'published')).length > 0 ? (
-              topics.filter(t => tests.some(test => test.topic_id === t.id && test.status === 'published')).map(topic => (
+            ) : topics.filter(t => tests.some(test => test.topics?.some(topic => topic.id === t.id) && test.status === 'published')).length > 0 ? (
+              topics.filter(t => tests.some(test => test.topics?.some(topic => topic.id === t.id) && test.status === 'published')).map(topic => (
                 <div 
                   key={`test-${topic.id}`}
                   onClick={() => navigate(user ? '/student/dashboard' : '/login')}
@@ -223,7 +223,7 @@ export default function LandingPage() {
                 >
                   <div className="flex items-center gap-2 mb-4">
                     <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-bold border border-blue-100 uppercase tracking-wide">
-                      {test.topic_name || "Assessment"}
+                      {test.topics?.[0]?.name || "Assessment"}
                     </span>
                     <span className="px-3 py-1 bg-amber-50 text-amber-600 rounded-full text-xs font-bold border border-amber-100">
                       {test.status === 'published' ? 'Active' : 'Draft'}
