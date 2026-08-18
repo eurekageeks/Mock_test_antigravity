@@ -206,7 +206,7 @@ const SubmissionsManagement = () => {
       (att.student_email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (att.student_mobile || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (att.mock_test_title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (att.topic_name || '').toLowerCase().includes(searchTerm.toLowerCase())
+      (att.topic_names && att.topic_names.some(t => t.toLowerCase().includes(searchTerm.toLowerCase())))
     );
     return matchesSearch;
   });
@@ -464,7 +464,7 @@ const SubmissionsManagement = () => {
                           <div className="flex items-center gap-2 mt-1">
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
                               <Layers className="w-3 h-3" />
-                              <span>{attempt.topic_name || 'General'}</span>
+                              <span>{attempt.topic_names?.length > 0 ? attempt.topic_names.join(', ') : 'General'}</span>
                             </span>
                             <span className="text-xs text-slate-400 font-medium">
                               • Total: {attempt.mock_test_total_marks || 0}m
@@ -909,13 +909,21 @@ const SubmissionsManagement = () => {
                                 </div>
 
                                 {isSubjective ? (
-                                  <div className="text-sm sm:text-base text-slate-900 dark:text-slate-100 font-mono whitespace-pre-wrap leading-relaxed bg-purple-50/50 dark:bg-purple-950/20 p-4 rounded-xl border-l-4 border-purple-600 shadow-sm">
-                                    {ans.text_answer ? (
-                                      ans.text_answer
-                                    ) : (
-                                      <span className="text-slate-400 not-italic font-sans">No paragraph response written by student.</span>
+                                  <>
+                                    <div className="text-sm sm:text-base text-slate-900 dark:text-slate-100 font-mono whitespace-pre-wrap leading-relaxed bg-purple-50/50 dark:bg-purple-950/20 p-4 rounded-xl border-l-4 border-purple-600 shadow-sm mb-3">
+                                      {ans.text_answer ? (
+                                        ans.text_answer
+                                      ) : (
+                                        <span className="text-slate-400 not-italic font-sans">No paragraph response written by student.</span>
+                                      )}
+                                    </div>
+                                    {ans.correct_answer && (
+                                      <div className="text-sm sm:text-base text-slate-900 dark:text-slate-100 font-mono whitespace-pre-wrap leading-relaxed bg-emerald-50/50 dark:bg-emerald-950/20 p-4 rounded-xl border-l-4 border-emerald-600 shadow-sm">
+                                        <span className="block text-xs font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400 mb-2">Expected Answer:</span>
+                                        {ans.correct_answer}
+                                      </div>
                                     )}
-                                  </div>
+                                  </>
                                 ) : (
                                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-sm">
                                     <div className="font-semibold">

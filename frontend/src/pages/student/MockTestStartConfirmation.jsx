@@ -74,9 +74,17 @@ const MockTestStartConfirmation = () => {
           
           {/* Header */}
           <div>
-            <span className="px-3 py-1 rounded-xl text-xs font-bold bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400">
-              {test.topic_name || "General"}
-            </span>
+            <div className="flex flex-wrap gap-2">
+              {test.topics && test.topics.length > 0 ? test.topics.map(t => (
+                <span key={t.id} className="px-3 py-1 rounded-xl text-xs font-bold bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400">
+                  {t.name}
+                </span>
+              )) : (
+                <span className="px-3 py-1 rounded-xl text-xs font-bold bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400">
+                  General
+                </span>
+              )}
+            </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white mt-4">{test.title}</h1>
             <p className="mt-2 text-sm text-slate-500 dark:text-slate-400 leading-relaxed">{test.description}</p>
           </div>

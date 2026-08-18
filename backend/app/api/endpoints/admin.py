@@ -12,7 +12,7 @@ from app.models.models import (
 )
 from app.schemas.schemas import (
     AdminDashboardStats, UserResponse, StudentStatusUpdate, TestAttemptResponse,
-    TopicCreate, TopicResponse, MockTestCreate, MockTestResponse,
+    TopicCreate, TopicResponse, MockTestCreate, MockTestUpdate, MockTestResponse,
     QuestionCreate, QuestionResponse, QuestionReorder,
     BulkQuestionDelete, BulkQuestionUpdateMarks, AttemptDetailReviewResponse,
     BulkAttemptDelete, PaginatedAttemptResponse
@@ -126,7 +126,7 @@ def get_all_attempts(
     if end_date:
         query = query.filter(TestAttempt.start_time < datetime.combine(end_date + timedelta(days=1), datetime.min.time()))
     if topic_id:
-        query = query.filter(MockTest.topic_id == topic_id)
+        query = query.filter(MockTest.topics.any(Topic.id == topic_id))
         
     all_attempts = query.order_by(TestAttempt.id.desc()).all()
     filtered_attempts = []
@@ -173,7 +173,7 @@ def get_all_attempts(
         
         attempt.mock_test_title = attempt.mock_test.title if attempt.mock_test else "Unknown Test"
         attempt.mock_test_total_marks = attempt.mock_test.total_marks if attempt.mock_test else 0.0
-        attempt.topic_name = attempt.mock_test.topic.name if (attempt.mock_test and attempt.mock_test.topic) else "General"
+        attempt.topic_names = [t.name for t in attempt.mock_test.topics] if attempt.mock_test else []
         attempt.student_name = attempt.user.name if attempt.user else "Unknown Student"
         attempt.student_email = attempt.user.email if attempt.user else "N/A"
         attempt.student_mobile = attempt.user.mobile if attempt.user else "N/A"
@@ -245,7 +245,7 @@ def get_admin_attempt_review(
 
     attempt.mock_test_title = attempt.mock_test.title if attempt.mock_test else "Unknown Test"
     attempt.mock_test_total_marks = attempt.mock_test.total_marks if attempt.mock_test else 0.0
-    attempt.topic_name = attempt.mock_test.topic.name if (attempt.mock_test and attempt.mock_test.topic) else "General"
+    attempt.topic_names = [t.name for t in attempt.mock_test.topics] if attempt.mock_test else []
     attempt.student_name = attempt.user.name if attempt.user else "Unknown Student"
     attempt.student_email = attempt.user.email if attempt.user else "N/A"
     attempt.student_mobile = attempt.user.mobile if attempt.user else "N/A"
@@ -350,48 +350,54 @@ def delete_topic(topic_id: int, db: Session = Depends(get_db), current_user: Use
 def get_tests(db: Session = Depends(get_db), current_user: User = Depends(get_admin_user)):
     tests = db.query(MockTest).order_by(MockTest.id.desc()).all()
     for test in tests:
-        test.topic_name = test.topic.name
-        test.question_count = len(test.questions)
+        test.questions_count = len(test.questions)
         test.has_subjective = any(q.type == 'text' for q in test.questions)
     return tests
 
 @router.post("/tests", response_model=MockTestResponse)
 def create_test(test_in: MockTestCreate, db: Session = Depends(get_db), current_user: User = Depends(get_admin_user)):
-    # Verify topic exists
-    topic = db.query(Topic).filter(Topic.id == test_in.topic_id).first()
-    if not topic:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Topic does not exist.")
-        
-    test = MockTest(
-        topic_id=test_in.topic_id,
-        title=test_in.title.strip(),
-        description=test_in.description,
-        duration_minutes=test_in.duration_minutes,
-        passing_marks=test_in.passing_marks,
-        total_marks=test_in.total_marks,
-        instructions=test_in.instructions,
-        status=test_in.status
-    )
-    db.add(test)
-    db.commit()
-    db.refresh(test)
-    test.topic_name = topic.name
-    test.question_count = 0
-    return test
+    try:
+        if not test_in.topic_ids:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="At least one topic must be selected.")
+        topics = db.query(Topic).filter(Topic.id.in_(test_in.topic_ids)).all()
+        if len(topics) != len(test_in.topic_ids):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="One or more topics do not exist.")
+            
+        test = MockTest(
+            title=test_in.title.strip(),
+            description=test_in.description,
+            duration_minutes=test_in.duration_minutes,
+            passing_marks=test_in.passing_marks,
+            total_marks=test_in.total_marks,
+            instructions=test_in.instructions,
+            status=test_in.status,
+            auto_calculate_marks=test_in.auto_calculate_marks,
+            topic_id=test_in.topic_ids[0] if test_in.topic_ids else None
+        )
+        test.topics = topics
+        db.add(test)
+        db.commit()
+        db.refresh(test)
+        test.questions_count = 0
+        test.has_subjective = False
+        return test
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/tests/{test_id}", response_model=MockTestResponse)
 def get_test_details(test_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_admin_user)):
     test = db.query(MockTest).filter(MockTest.id == test_id).first()
     if not test:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Mock test not found.")
-    test.topic_name = test.topic.name
-    test.question_count = len(test.questions)
+    test.questions_count = len(test.questions)
     return test
 
 @router.put("/tests/{test_id}", response_model=MockTestResponse)
 def update_test(
     test_id: int,
-    test_in: MockTestCreate,
+    test_in: MockTestUpdate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_admin_user)
 ):
@@ -399,11 +405,15 @@ def update_test(
     if not test:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Mock test not found.")
         
-    topic = db.query(Topic).filter(Topic.id == test_in.topic_id).first()
-    if not topic:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Topic does not exist.")
+    if test_in.topic_ids is not None:
+        if not test_in.topic_ids:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="At least one topic must be selected.")
+        topics = db.query(Topic).filter(Topic.id.in_(test_in.topic_ids)).all()
+        if len(topics) != len(test_in.topic_ids):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="One or more topics do not exist.")
+        test.topics = topics
+        test.topic_id = test_in.topic_ids[0]
         
-    test.topic_id = test_in.topic_id
     test.title = test_in.title.strip()
     test.description = test_in.description
     test.duration_minutes = test_in.duration_minutes
@@ -411,11 +421,11 @@ def update_test(
     test.total_marks = test_in.total_marks
     test.instructions = test_in.instructions
     test.status = test_in.status
+    test.auto_calculate_marks = test_in.auto_calculate_marks
     
     db.commit()
     db.refresh(test)
-    test.topic_name = topic.name
-    test.question_count = len(test.questions)
+    test.questions_count = len(test.questions)
     return test
 
 @router.delete("/tests/{test_id}")

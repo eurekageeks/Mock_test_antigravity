@@ -62,6 +62,7 @@ def seed_data(db: Session):
                 instructions="1. The test consists of 5 questions (3 MCQs and 2 Text questions).\n2. Total duration is 10 minutes.\n3. The backend timer is active; the test will submit automatically when time runs out.\n4. You must score 5.0 or higher to pass.",
                 status="published"
             )
+            sample_test.topics = [python_topic]
             db.add(sample_test)
             db.commit()
             db.refresh(sample_test)

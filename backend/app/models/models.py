@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, ForeignKey, Text, Table, JSON, LargeBinary
+from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, Date, ForeignKey, Text, Table, JSON, LargeBinary
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.core.database import Base
@@ -35,6 +35,7 @@ class StudentProfile(Base):
     education = Column(Text, nullable=True)
     experience = Column(Text, nullable=True)
     resume_path = Column(String(500), nullable=True)
+    date_of_birth = Column(Date, nullable=True)
     
     # Relationships
     user = relationship("User", back_populates="profile")
@@ -57,14 +58,21 @@ class Topic(Base):
     description = Column(Text, nullable=True)
     
     # Relationships
-    tests = relationship("MockTest", back_populates="topic", cascade="all, delete-orphan")
+    tests = relationship("MockTest", secondary="mock_test_topic_association", back_populates="topics")
     lessons = relationship("LearningLesson", back_populates="topic", cascade="all, delete-orphan", order_by="LearningLesson.order_index")
+
+mock_test_topic_association = Table(
+    'mock_test_topic_association', Base.metadata,
+    Column('mock_test_id', Integer, ForeignKey('mock_tests.id', ondelete="CASCADE"), primary_key=True),
+    Column('topic_id', Integer, ForeignKey('topics.id', ondelete="CASCADE"), primary_key=True)
+)
 
 class MockTest(Base):
     __tablename__ = "mock_tests"
     
     id = Column(Integer, primary_key=True, index=True)
-    topic_id = Column(Integer, ForeignKey("topics.id", ondelete="CASCADE"), nullable=False)
+    # topic_id is retained as legacy nullable to prevent breaking schema immediately if not dropped
+    topic_id = Column(Integer, ForeignKey("topics.id", ondelete="SET NULL"), nullable=True)
     title = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
     duration_minutes = Column(Integer, nullable=False)
@@ -76,7 +84,7 @@ class MockTest(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     
     # Relationships
-    topic = relationship("Topic", back_populates="tests")
+    topics = relationship("Topic", secondary=mock_test_topic_association, back_populates="tests")
     questions = relationship("Question", back_populates="mock_test", cascade="all, delete-orphan", order_by="Question.order_index")
     attempts = relationship("TestAttempt", back_populates="mock_test", cascade="all, delete-orphan")
 

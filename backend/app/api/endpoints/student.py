@@ -128,6 +128,8 @@ def update_profile(
         profile.education = profile_in.education
     if profile_in.experience is not None:
         profile.experience = profile_in.experience
+    if profile_in.date_of_birth is not None:
+        profile.date_of_birth = profile_in.date_of_birth
         
     db.commit()
     db.refresh(profile)
@@ -175,7 +177,7 @@ def list_student_tests(
 ):
     query = db.query(MockTest).filter(MockTest.status == "published")
     if topic_id:
-        query = query.filter(MockTest.topic_id == topic_id)
+        query = query.filter(MockTest.topics.any(Topic.id == topic_id))
     if search:
         query = query.filter(MockTest.title.ilike(f"%{search}%"))
 
@@ -190,6 +192,8 @@ def list_student_tests(
 
     # Exclude tests that the student has a cancelled_cheating attempt for
     cancelled_test_ids = set()
+    completed_test_ids = set()
+    incomplete_test_ids = set()
     if current_user:
         cancelled_attempts = db.query(TestAttempt.mock_test_id).filter(
             TestAttempt.user_id == current_user.id,
@@ -197,17 +201,30 @@ def list_student_tests(
         ).all()
         cancelled_test_ids = {a[0] for a in cancelled_attempts}
 
+        completed_attempts = db.query(TestAttempt.mock_test_id).filter(
+            TestAttempt.user_id == current_user.id,
+            TestAttempt.status == "submitted"
+        ).all()
+        completed_test_ids = {a[0] for a in completed_attempts}
+
+        incomplete_attempts = db.query(TestAttempt.mock_test_id).filter(
+            TestAttempt.user_id == current_user.id,
+            TestAttempt.status == "started"
+        ).all()
+        incomplete_test_ids = {a[0] for a in incomplete_attempts}
+
     recommended = []
     others = []
     for test in tests:
         if test.id in cancelled_test_ids:
             continue
             
-        test.topic_name = test.topic.name
-        test.question_count = len(test.questions)
+        test.questions_count = len(test.questions)
         test.has_subjective = any(q.type == 'text' for q in test.questions)
+        test.is_completed = test.id in completed_test_ids
+        test.is_incomplete = test.id in incomplete_test_ids
         # Strip and lowercase both sides for case-insensitive match
-        test.is_recommended = (test.topic.name.strip().lower() in skill_names) if skill_names else False
+        test.is_recommended = any(t.name.strip().lower() in skill_names for t in test.topics) if skill_names else False
         if test.is_recommended:
             recommended.append(test)
         else:
@@ -231,8 +248,7 @@ def get_student_test_detail(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Mock test not found or is not published."
         )
-    test.topic_name = test.topic.name
-    test.question_count = len(test.questions)
+    test.questions_count = len(test.questions)
     return test
 
 @router.get("/topics", response_model=List[TopicResponse])

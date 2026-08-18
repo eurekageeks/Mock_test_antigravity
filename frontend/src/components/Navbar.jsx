@@ -240,7 +240,7 @@ const Navbar = () => {
                 <Link to="/admin/students" onClick={() => setMobileMenuOpen(false)} className="px-3 py-2 text-base font-medium rounded-lg">Students</Link>
                 <Link to="/admin/topics" onClick={() => setMobileMenuOpen(false)} className="px-3 py-2 text-base font-medium rounded-lg">Topics</Link>
                 <Link to="/admin/tests" onClick={() => setMobileMenuOpen(false)} className="px-3 py-2 text-base font-medium rounded-lg">Mock Tests</Link>
-                <Link to="/admin/submissions" onClick={() => setMobileMenuOpen(false)} className="px-3 py-2 text-base font-medium rounded-lg text-purple-600 dark:text-purple-400 font-bold">Subjective Mock Test</Link>
+                <Link to="/admin/submissions" onClick={() => setMobileMenuOpen(false)} className="px-3 py-2 text-base font-medium rounded-lg text-purple-600 dark:text-purple-400 font-bold">Submissions Console</Link>
                 <Link to="/admin/backup" onClick={() => setMobileMenuOpen(false)} className="px-3 py-2 text-base font-medium rounded-lg text-emerald-600 dark:text-emerald-400 font-bold">Backup & Restore</Link>
                 <div className="h-[1px] bg-slate-200 dark:bg-slate-800 my-2"></div>
                 <button onClick={handleLogout} className="w-full flex items-center justify-center space-x-1 px-3 py-2 bg-red-500/10 text-red-600 dark:text-red-400 rounded-lg">

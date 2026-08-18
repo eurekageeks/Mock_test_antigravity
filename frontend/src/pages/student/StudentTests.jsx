@@ -32,7 +32,7 @@ const StudentTests = () => {
   }, []);
 
   const filteredTests = tests.filter((test) => {
-    const matchesTopic = selectedTopic ? test.topic_id === parseInt(selectedTopic) : true;
+    const matchesTopic = selectedTopic ? test.topics && test.topics.some(t => t.id === parseInt(selectedTopic)) : true;
     const matchesSearch = test.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           (test.description && test.description.toLowerCase().includes(searchQuery.toLowerCase()));
     return matchesTopic && matchesSearch;
@@ -68,10 +68,18 @@ const StudentTests = () => {
         </div>
       )}
       <div className={showBadge ? 'mt-2' : ''}>
+        <div className="flex flex-wrap gap-1 mb-2">
+          {test.topics && test.topics.length > 0 ? test.topics.map(t => (
+            <span key={t.id} className="inline-block px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400">
+              {t.name}
+            </span>
+          )) : (
+            <span className="inline-block px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+              General
+            </span>
+          )}
+        </div>
         <div className="flex items-center space-x-2 mb-4">
-          <span className="inline-block px-3 py-1 rounded-xl text-xs font-semibold bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400">
-            {test.topic_name || "General"}
-          </span>
           <span className={`inline-flex px-2 py-0.5 rounded text-[9px] font-black uppercase ${
             test.has_subjective 
               ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400' 

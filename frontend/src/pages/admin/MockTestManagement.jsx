@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import api from '../../services/api';
 import { 
   FileText, Plus, Edit3, Trash2, BookOpen, Clock, 
-  Award, ShieldAlert, Check, X, Eye, HelpCircle, Save, Search 
+  Award, ShieldAlert, Check, X, Eye, HelpCircle, Save, Search, ChevronDown 
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 
@@ -20,7 +20,9 @@ const MockTestManagement = () => {
   const [editingTest, setEditingTest] = useState(null);
 
   // Form Fields
-  const [topicId, setTopicId] = useState('');
+  const [topicIds, setTopicIds] = useState([]);
+  const [isTopicDropdownOpen, setIsTopicDropdownOpen] = useState(false);
+  const topicDropdownRef = useRef(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [durationMinutes, setDurationMinutes] = useState(30);
@@ -41,8 +43,8 @@ const MockTestManagement = () => {
       ]);
       setTests(testsRes.data);
       setTopics(topicsRes.data);
-      if (topicsRes.data.length > 0 && !topicId) {
-        setTopicId(topicsRes.data[0].id.toString());
+      if (topicsRes.data.length > 0 && topicIds.length === 0) {
+        setTopicIds([topicsRes.data[0].id.toString()]);
       }
     } catch (err) {
       console.error("Failed to load test metrics catalog:", err);
@@ -55,6 +57,18 @@ const MockTestManagement = () => {
     fetchCatalog();
   }, []);
 
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (topicDropdownRef.current && !topicDropdownRef.current.contains(event.target)) {
+        setIsTopicDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   const openCreateModal = () => {
     setEditingTest(null);
     setTitle('');
@@ -65,13 +79,13 @@ const MockTestManagement = () => {
     setInstructions('');
     setStatus('draft');
     setAutoCalculateMarks(true);
-    if (topics.length > 0) setTopicId(topics[0].id.toString());
+    if (topics.length > 0) setTopicIds([topics[0].id.toString()]);
     setShowFormModal(true);
   };
 
   const openEditModal = (test) => {
     setEditingTest(test);
-    setTopicId(test.topic_id.toString());
+    setTopicIds(test.topics.map(t => t.id.toString()));
     setTitle(test.title);
     setDescription(test.description || '');
     setDurationMinutes(test.duration_minutes);
@@ -102,7 +116,7 @@ const MockTestManagement = () => {
     setMessage({ text: '', type: '' });
 
     const payload = {
-      topic_id: parseInt(topicId),
+      topic_ids: topicIds.map(id => parseInt(id)),
       title,
       description,
       duration_minutes: parseInt(durationMinutes),
@@ -219,7 +233,7 @@ const MockTestManagement = () => {
           (() => {
             const filteredTests = tests.filter(t => 
               t.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-              (t.topic_name && t.topic_name.toLowerCase().includes(searchQuery.toLowerCase()))
+              (t.topics && t.topics.some(topic => topic.name.toLowerCase().includes(searchQuery.toLowerCase())))
             );
             return filteredTests.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -229,11 +243,19 @@ const MockTestManagement = () => {
                     className="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-200/60 dark:border-slate-800 hover:border-brand-500/30 dark:hover:border-brand-500/30 shadow-sm hover:shadow-lg transition-all duration-350 flex flex-col justify-between"
                   >
                     <div>
-                      <div className="flex items-center justify-between mb-4">
-                        <span className="inline-block px-3 py-1 rounded-xl text-xs font-semibold bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400">
-                          {test.topic_name || "General"}
-                        </span>
-                        <span className={`inline-flex px-2 py-0.5 rounded text-[9px] font-black uppercase ${
+                        <div className="flex flex-wrap gap-1.5 mb-4">
+                          {test.topics && test.topics.length > 0 ? test.topics.map(t => (
+                            <span key={t.id} className="inline-block px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400">
+                              {t.name}
+                            </span>
+                          )) : (
+                            <span className="inline-block px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+                              General
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center justify-between mb-4">
+                          <span className={`inline-flex px-2 py-0.5 rounded text-[9px] font-black uppercase ${
                           test.status === 'published' 
                             ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' 
                             : 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-350'
@@ -364,16 +386,48 @@ const MockTestManagement = () => {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Topic Category</label>
-                  <select
-                    value={topicId}
-                    onChange={(e) => setTopicId(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-350 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm dark:text-white font-medium dark:bg-slate-800"
-                  >
-                    {topics.map((t) => (
-                      <option key={t.id} value={t.id}>{t.name}</option>
-                    ))}
-                  </select>
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Topic Categories</label>
+                  <div className="relative" ref={topicDropdownRef}>
+                    <button
+                      type="button"
+                      onClick={() => setIsTopicDropdownOpen(!isTopicDropdownOpen)}
+                      className="w-full flex items-center justify-between px-4 py-3 rounded-xl border border-slate-350 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm dark:text-white font-medium"
+                    >
+                      <span className="truncate">
+                        {topicIds.length === 0 
+                          ? 'Select topics...' 
+                          : `${topicIds.length} topic${topicIds.length > 1 ? 's' : ''} selected`}
+                      </span>
+                      <ChevronDown className="h-4 w-4 text-slate-400" />
+                    </button>
+                    
+                    {isTopicDropdownOpen && (
+                      <div className="absolute z-10 w-full mt-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xl py-2">
+                        {topics.length === 0 ? (
+                          <div className="px-4 py-2 text-sm text-slate-500 dark:text-slate-400">No topics found</div>
+                        ) : (
+                          topics.map(t => (
+                            <label key={t.id} className="flex items-center space-x-3 cursor-pointer text-sm dark:text-white font-medium hover:bg-slate-50 dark:hover:bg-slate-700/50 px-4 py-2">
+                              <input
+                                type="checkbox"
+                                value={t.id}
+                                checked={topicIds.includes(t.id.toString())}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setTopicIds([...topicIds, e.target.value]);
+                                  } else {
+                                    setTopicIds(topicIds.filter(id => id !== e.target.value));
+                                  }
+                                }}
+                                className="rounded border-slate-300 text-brand-500 focus:ring-brand-500 bg-white dark:bg-slate-800"
+                              />
+                              <span>{t.name}</span>
+                            </label>
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 

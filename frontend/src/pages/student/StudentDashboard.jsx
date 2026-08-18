@@ -4,7 +4,7 @@ import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { 
   Play, RotateCcw, AlertTriangle, CheckCircle, Clock, 
-  Award, FileText, ChevronRight, User, Sparkles, Search
+  Award, FileText, ChevronRight, User, Sparkles, Search, Check
 } from 'lucide-react';
 
 const StudentDashboard = () => {
@@ -314,13 +314,13 @@ const StudentDashboard = () => {
 
           {(() => {
             let displayTests = selectedTopicId 
-              ? tests.filter(t => t.topic_id === parseInt(selectedTopicId))
+              ? tests.filter(t => t.topics && t.topics.some(topic => topic.id === parseInt(selectedTopicId)))
               : (tests.filter(t => t.is_recommended).length > 0 ? tests.filter(t => t.is_recommended).slice(0, 6) : tests.slice(0, 6));
               
             if (searchQuery.trim()) {
               const query = searchQuery.toLowerCase();
               displayTests = (selectedTopicId ? tests : tests).filter(t => 
-                (selectedTopicId ? t.topic_id === parseInt(selectedTopicId) : true) &&
+                (selectedTopicId ? (t.topics && t.topics.some(topic => topic.id === parseInt(selectedTopicId))) : true) &&
                 t.title.toLowerCase().includes(query)
               );
             }
@@ -339,14 +339,22 @@ const StudentDashboard = () => {
                 {displayTests.map((test) => (
                   <div 
                     key={test.id} 
-                    className={`bg-white dark:bg-slate-800 rounded-3xl p-6 border ${test.is_recommended && !selectedTopicId ? 'border-amber-400/50 shadow-amber-500/10' : 'border-slate-200/60 dark:border-slate-800'} hover:border-brand-500/50 dark:hover:border-brand-500/50 shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col justify-between`}
+                    className={`bg-white dark:bg-slate-800 rounded-3xl p-6 border ${test.is_completed ? 'border-emerald-400/50 shadow-emerald-500/10' : test.is_incomplete ? 'border-orange-400/50 shadow-orange-500/10' : (test.is_recommended && !selectedTopicId ? 'border-amber-400/50 shadow-amber-500/10' : 'border-slate-200/60 dark:border-slate-800')} hover:border-brand-500/50 dark:hover:border-brand-500/50 shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col justify-between`}
                   >
                     <div>
                       <div className="flex items-center justify-between mb-4">
+                        <div className="flex flex-wrap gap-1 mb-2">
+                          {test.topics && test.topics.length > 0 ? test.topics.map(t => (
+                            <span key={t.id} className="inline-block px-2 py-0.5 rounded-lg text-[10px] font-semibold bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400">
+                              {t.name}
+                            </span>
+                          )) : (
+                            <span className="inline-block px-2 py-0.5 rounded-lg text-[10px] font-semibold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+                              General
+                            </span>
+                          )}
+                        </div>
                         <div className="flex items-center space-x-2">
-                          <span className="inline-block px-3 py-1 rounded-xl text-xs font-semibold bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400">
-                            {test.topic_name || "General"}
-                          </span>
                           <span className={`inline-flex px-2 py-0.5 rounded text-[9px] font-black uppercase ${
                             test.has_subjective 
                               ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400' 
@@ -355,11 +363,19 @@ const StudentDashboard = () => {
                             {test.has_subjective ? 'SUBJECTIVE' : 'OBJECTIVE'}
                           </span>
                         </div>
-                        {test.is_recommended && !selectedTopicId && (
+                        {test.is_completed ? (
+                          <span className="flex items-center text-[10px] font-extrabold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-2.5 py-1 rounded-full">
+                            <Check className="h-3 w-3 mr-1" /> Completed
+                          </span>
+                        ) : test.is_incomplete ? (
+                          <span className="flex items-center text-[10px] font-extrabold text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-500/10 px-2.5 py-1 rounded-full">
+                            <Clock className="h-3 w-3 mr-1" /> Incomplete
+                          </span>
+                        ) : test.is_recommended && !selectedTopicId ? (
                           <span className="flex items-center text-[10px] font-extrabold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-2.5 py-1 rounded-full">
                             ★ Recommended
                           </span>
-                        )}
+                        ) : null}
                       </div>
                       <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2 line-clamp-1">{test.title}</h3>
                       <p className="text-xs text-slate-500 dark:text-slate-400 mb-4 line-clamp-2">{test.description}</p>

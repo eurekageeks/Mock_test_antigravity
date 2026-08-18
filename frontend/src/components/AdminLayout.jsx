@@ -52,7 +52,7 @@ const AdminLayout = ({ children }) => {
       activeBg: 'bg-amber-600 text-white shadow-lg shadow-amber-500/25',
     },
     {
-      label: 'Subjective Mock Test',
+      label: 'Submissions Console',
       path: '/admin/submissions',
       icon: ClipboardCheck,
       iconColor: 'text-purple-500',

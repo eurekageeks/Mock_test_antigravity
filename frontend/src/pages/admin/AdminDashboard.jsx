@@ -195,7 +195,7 @@ const AdminDashboard = () => {
               <div>
                 <span className="font-bold text-base text-purple-600 dark:text-purple-400 block flex items-center gap-1.5">
                   <ClipboardCheck className="h-4 w-4" />
-                  <span>Subjective Mock Test</span>
+                  <span>Submissions Console</span>
                 </span>
                 <span className="text-xs text-slate-400 mt-1 block">Grade subjective test answers.</span>
               </div>

@@ -1,6 +1,6 @@
 from pydantic import BaseModel, EmailStr, Field
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, date
 
 # ----------------- Base Config -----------------
 class BaseSchema(BaseModel):
@@ -55,6 +55,7 @@ class StudentProfileResponse(BaseSchema):
     education: Optional[str]
     experience: Optional[str]
     resume_path: Optional[str]
+    date_of_birth: Optional[date] = None
     skills: List[SkillResponse] = []
 
 class StudentProfileUpdate(BaseModel):
@@ -62,6 +63,7 @@ class StudentProfileUpdate(BaseModel):
     mobile: Optional[str] = None
     education: Optional[str] = None
     experience: Optional[str] = None
+    date_of_birth: Optional[date] = None
 
 # ----------------- Topic -----------------
 class TopicCreate(BaseModel):
@@ -109,32 +111,31 @@ class QuestionReorder(BaseModel):
     question_ids: List[int]
 
 # ----------------- Mock Test -----------------
-class MockTestCreate(BaseModel):
-    topic_id: int
-    title: str = Field(..., min_length=2, max_length=255)
+
+class MockTestBase(BaseSchema):
+    title: str
     description: Optional[str] = None
-    duration_minutes: int = Field(..., gt=0)
-    passing_marks: float = Field(0, ge=0)
-    total_marks: float = Field(0, ge=0)
+    duration_minutes: int
+    total_marks: float
+    passing_marks: float
     instructions: Optional[str] = None
-    status: str = "draft"  # 'draft', 'published'
+    status: str = "draft"
     auto_calculate_marks: bool = True
 
-class MockTestResponse(BaseSchema):
+class MockTestCreate(MockTestBase):
+    topic_ids: List[int]
+
+class MockTestUpdate(MockTestBase):
+    topic_ids: Optional[List[int]] = None
+
+class MockTestResponse(MockTestBase):
     id: int
-    topic_id: int
-    topic_name: Optional[str] = None
-    title: str
-    description: Optional[str]
-    duration_minutes: int
-    passing_marks: float
-    total_marks: float
-    instructions: Optional[str]
-    status: str
+    topics: List[TopicResponse] = []
     created_at: datetime
-    question_count: Optional[int] = 0
+    questions_count: int = 0
     is_recommended: Optional[bool] = False
-    auto_calculate_marks: bool = True
+    is_completed: Optional[bool] = False
+    is_incomplete: Optional[bool] = False
     has_subjective: Optional[bool] = False
 
 # ----------------- Student-facing Secure Test Attempt Schemas -----------------
@@ -200,7 +201,7 @@ class TestAttemptResponse(BaseSchema):
     status: str
     mock_test_title: Optional[str] = None
     mock_test_total_marks: Optional[float] = None
-    topic_name: Optional[str] = None
+    topic_names: Optional[List[str]] = []
     student_name: Optional[str] = None
     student_email: Optional[str] = None
     student_mobile: Optional[str] = None
