@@ -128,8 +128,6 @@ def update_profile(
         profile.education = profile_in.education
     if profile_in.experience is not None:
         profile.experience = profile_in.experience
-    if profile_in.date_of_birth is not None:
-        profile.date_of_birth = profile_in.date_of_birth
         
     db.commit()
     db.refresh(profile)
