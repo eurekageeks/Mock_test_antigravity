@@ -728,7 +728,7 @@ def submit_attempt_internal(attempt_id: int, db: Session) -> Result:
     wrong_count = 0
     
     for q in questions:
-        if q.type == 'mcq':
+        if q.type in ['mcq', 'mcq_multi']:
             objective_total_marks += q.marks
         elif q.type == 'text':
             subjective_total_marks += q.marks
@@ -742,7 +742,7 @@ def submit_attempt_internal(attempt_id: int, db: Session) -> Result:
         if student_ans:
             if student_ans.is_correct is True:
                 score += q.marks
-                if q.type == 'mcq':
+                if q.type in ['mcq', 'mcq_multi']:
                     objective_score += q.marks
                 elif q.type == 'text':
                     subjective_score += q.marks

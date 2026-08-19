@@ -98,7 +98,7 @@ const MockTestStartConfirmation = () => {
             </div>
             <div>
               <FileText className="h-6 w-6 mx-auto text-brand-500 mb-2" />
-              <span className="block text-sm font-black text-slate-900 dark:text-white">{test.question_count} Questions</span>
+              <span className="block text-sm font-black text-slate-900 dark:text-white">{test.questions_count} Questions</span>
               <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Total Questions</span>
             </div>
             <div>

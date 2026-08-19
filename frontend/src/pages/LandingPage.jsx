@@ -237,7 +237,7 @@ export default function LandingPage() {
                   
                   <div className="flex items-center justify-between text-xs font-semibold text-slate-500 mb-6 pt-4 border-t border-slate-100">
                     <span className="flex items-center gap-1"><Clock size={14}/> {test.duration_minutes} mins</span>
-                    <span className="flex items-center gap-1"><FileText size={14}/> {test.question_count || 0} Qs</span>
+                    <span className="flex items-center gap-1"><FileText size={14}/> {test.questions_count || 0} Qs</span>
                     <span className="flex items-center gap-1"><Target size={14}/> {test.total_marks} Marks</span>
                   </div>
                   

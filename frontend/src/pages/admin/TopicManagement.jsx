@@ -269,7 +269,7 @@ const TopicManagement = () => {
                                     </div>
                                     <div className="flex items-center gap-4 text-[11px] text-slate-500 dark:text-slate-400 mt-1">
                                       <span className="flex items-center"><Clock className="h-3 w-3 mr-1" /> {test.duration_minutes}m</span>
-                                      <span className="flex items-center"><BookOpen className="h-3 w-3 mr-1" /> {test.question_count} Qs</span>
+                                      <span className="flex items-center"><BookOpen className="h-3 w-3 mr-1" /> {test.questions_count} Qs</span>
                                       <span className="flex items-center"><Award className="h-3 w-3 mr-1" /> {test.total_marks} Marks</span>
                                     </div>
                                   </div>

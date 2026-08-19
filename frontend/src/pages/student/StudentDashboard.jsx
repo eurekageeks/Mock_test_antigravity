@@ -383,7 +383,7 @@ const StudentDashboard = () => {
                     <div>
                       <div className="flex items-center justify-between text-[11px] font-semibold text-slate-400 mb-4 border-t border-slate-100 dark:border-slate-700/50 pt-4">
                         <span className="flex items-center"><Clock className="h-4 w-4 mr-1 text-slate-400" /> {test.duration_minutes} Mins</span>
-                        <span className="flex items-center"><FileText className="h-4 w-4 mr-1 text-slate-400" /> {test.question_count} Qs</span>
+                        <span className="flex items-center"><FileText className="h-4 w-4 mr-1 text-slate-400" /> {test.questions_count} Qs</span>
                         <span className="flex items-center"><Award className="h-4 w-4 mr-1 text-slate-400" /> {test.total_marks} Marks</span>
                       </div>
                       <Link 
