@@ -370,32 +370,46 @@ const MockTestInterface = () => {
                   <button
                     key={opt.id}
                     onClick={() => isMulti ? handleMultiSelectOption(currentQuestion.id, opt.option_key) : handleSelectOption(currentQuestion.id, opt.option_key)}
-                    className={`w-full flex items-center p-5 rounded-2xl border text-left font-medium transition-all duration-200 ${
+                    className={`w-full flex items-center justify-between p-5 rounded-2xl border text-left font-medium transition-all duration-200 ${
                       isSelected
                         ? 'border-brand-500 bg-brand-500/5 dark:bg-brand-500/10 text-slate-900 dark:text-white ring-2 ring-brand-500/20'
-                        : 'border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
+                        : 'border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
                     }`}
                   >
-                    <span className={`w-8 h-8 flex items-center justify-center font-bold text-xs mr-4 transition-colors ${
-                      isMulti ? 'rounded-md' : 'rounded-full'
-                    } ${
-                      isSelected
-                        ? 'bg-brand-500 text-white'
-                        : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300'
+                    <div className="flex items-center flex-grow pr-4">
+                      <span className={`w-8 h-8 flex-shrink-0 flex items-center justify-center font-bold text-xs mr-4 transition-colors ${
+                        isMulti ? 'rounded-md' : 'rounded-full'
+                      } ${
+                        isSelected
+                          ? 'bg-brand-500 text-white'
+                          : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400'
+                      }`}>
+                        {opt.option_key}
+                      </span>
+                      <div 
+                        className="text-sm prose dark:prose-invert max-w-none inline"
+                        dangerouslySetInnerHTML={{ __html: processHtmlImages(opt.option_text) }}
+                        onClick={(e) => {
+                          // Prevent the click from triggering option selection if they just clicked an image to zoom
+                          if (e.target.tagName === 'IMG') {
+                            e.stopPropagation();
+                            setZoomedImage(e.target.src);
+                          }
+                        }}
+                      />
+                    </div>
+                    {/* Square Check Box on the Right */}
+                    <div className={`w-6 h-6 flex-shrink-0 border-2 rounded transition-colors flex items-center justify-center ${
+                      isSelected 
+                        ? 'border-brand-500 bg-brand-500' 
+                        : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800'
                     }`}>
-                      {opt.option_key}
-                    </span>
-                    <div 
-                      className="text-sm prose dark:prose-invert max-w-none inline"
-                      dangerouslySetInnerHTML={{ __html: processHtmlImages(opt.option_text) }}
-                      onClick={(e) => {
-                        // Prevent the click from triggering option selection if they just clicked an image to zoom
-                        if (e.target.tagName === 'IMG') {
-                          e.stopPropagation();
-                          setZoomedImage(e.target.src);
-                        }
-                      }}
-                    />
+                      {isSelected && (
+                        <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </div>
                   </button>
                 );
               })}
