@@ -121,13 +121,15 @@ const TestResults = () => {
             </div>
             
             {/* Circle Score */}
-            <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl text-center self-start md:self-center">
-              <span className="text-xs text-white/80 block font-semibold uppercase tracking-wider">Final Grade</span>
-              <span className="text-3xl font-black block mt-1">{attempt.result.percentage}%</span>
-              <span className="text-[10px] text-white/90 block font-bold mt-1">
-                ({attempt.result.score} / {attempt.mock_test_total_marks} Marks)
-              </span>
-            </div>
+            {!hasPendingSubjective && (
+              <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl text-center self-start md:self-center">
+                <span className="text-xs text-white/80 block font-semibold uppercase tracking-wider">Final Grade</span>
+                <span className="text-3xl font-black block mt-1">{attempt.result.percentage}%</span>
+                <span className="text-[10px] text-white/90 block font-bold mt-1">
+                  ({attempt.result.score} / {attempt.mock_test_total_marks} Marks)
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
