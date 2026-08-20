@@ -30,11 +30,10 @@ export default function PublicCatalog() {
       setCatalog(fetchedCatalog);
       
       // Auto-select first topic and its first lesson if available
-      if (fetchedCatalog.length > 0) {
-        setSelectedTopicId(fetchedCatalog[0].id);
-        if (fetchedCatalog[0].lessons && fetchedCatalog[0].lessons.length > 0) {
-          setSelectedLessonId(fetchedCatalog[0].lessons[0].id);
-        }
+      const topicsWithLessons = fetchedCatalog.filter(t => t.lessons && t.lessons.length > 0);
+      if (topicsWithLessons.length > 0) {
+        setSelectedTopicId(topicsWithLessons[0].id);
+        setSelectedLessonId(topicsWithLessons[0].lessons[0].id);
       }
     } catch (err) {
       console.error("Failed to load catalog:", err);
